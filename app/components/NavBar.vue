@@ -23,7 +23,7 @@
       </li>
 
       <li>
-        <NuxtLink to="/blog" @click="closeMenu"> التخصصات</NuxtLink>
+        <NuxtLink to="/#specialties" @click.prevent="goToSpecialties"> التخصصات</NuxtLink>
       </li>
 
       <li>
@@ -125,8 +125,32 @@ const displayName = computed(() => {
   return user.value.name || 'زائر'
 })
 
+const route = useRoute()
+const router = useRouter()
+
 const closeMenu = () => {
   isMenuOpen.value = false
+}
+
+const scrollToSpecialties = () => {
+  document.getElementById('specialties')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  })
+}
+
+const goToSpecialties = async () => {
+  closeMenu()
+
+  if (route.path !== '/') {
+    await router.push({ path: '/', hash: '#specialties' })
+    await nextTick()
+  } else if (route.hash !== '#specialties') {
+    await router.replace({ hash: '#specialties' })
+    await nextTick()
+  }
+
+  scrollToSpecialties()
 }
 
 const logout = async () => {
@@ -368,7 +392,7 @@ const logout = async () => {
 
   .nav-links {
     position: absolute;
-    top: 65px;
+    top: 85px;
     left: 0;
     right: 0;
     width: 100%;
