@@ -5,11 +5,11 @@
         <section class="contact-panel" aria-label="Contact information">
           <a
             class="contact-row"
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=hayat.clinc@gmail.com"
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=alhayat.medical@gmail.com"
             target="_blank"
             rel="noopener noreferrer"
           >
-            <span class="contact-text">hayat.clinc@gmail.com</span>
+            <span class="contact-text">alhayat.medical@gmail.com</span>
             <span class="icon-badge" aria-hidden="true">
               <Mail />
             </span>

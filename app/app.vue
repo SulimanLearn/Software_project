@@ -1,8 +1,3 @@
-<script setup lang="ts">
-import { F } from 'vue-router/dist/index-D_VEAp3P.js';
-
-</script>
-
 <template>
   <div class="app-shell">
     <NuxtRouteAnnouncer />
