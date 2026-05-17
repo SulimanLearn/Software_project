@@ -46,6 +46,9 @@
           <NuxtLink to="/dashboard/reports" class="sidebar-link">
             التقارير
           </NuxtLink>
+          <NuxtLink to="/dashboard/articles" class="sidebar-link">
+            إدارة المقالات
+          </NuxtLink>
           <NuxtLink to="/dashboard/inventory" class="sidebar-link">
             مراقبة المخزون
           </NuxtLink>
@@ -69,7 +72,6 @@
         <header class="page-header">
           <div class="header-row">
             <h1>إعدادات المنصة</h1>
-            <AdminNotifications />
           </div>
         </header>
 
@@ -504,7 +506,7 @@ const saveSettings = () => {
   }
 
   .sidebar-nav.is-open {
-    max-height: 560px;
+    max-height: 640px;
     margin-top: 18px;
     opacity: 1;
   }

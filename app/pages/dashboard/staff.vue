@@ -46,6 +46,9 @@
           <NuxtLink to="/dashboard/reports" class="sidebar-link">
             التقارير
           </NuxtLink>
+          <NuxtLink to="/dashboard/articles" class="sidebar-link">
+            إدارة المقالات
+          </NuxtLink>
           <NuxtLink to="/dashboard/inventory" class="sidebar-link">
             مراقبة المخزون
           </NuxtLink>
@@ -82,8 +85,6 @@
               >
                 {{ section.buttonText }}
               </button>
-
-              <AdminNotifications v-if="section.role === 'doctor'" />
             </div>
           </div>
 
@@ -1815,7 +1816,7 @@ td {
   }
 
   .sidebar-nav.is-open {
-    max-height: 560px;
+    max-height: 640px;
     margin-top: 18px;
     opacity: 1;
   }

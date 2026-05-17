@@ -46,6 +46,9 @@
           <NuxtLink to="/dashboard/reports" class="sidebar-link">
             التقارير
           </NuxtLink>
+          <NuxtLink to="/dashboard/articles" class="sidebar-link">
+            إدارة المقالات
+          </NuxtLink>
           <NuxtLink to="/dashboard/inventory" class="sidebar-link active">
             مراقبة المخزون
           </NuxtLink>
@@ -69,7 +72,6 @@
         <header class="page-header">
           <div class="header-row">
             <h1>مراقبة المخزون</h1>
-            <AdminNotifications />
           </div>
         </header>
 
@@ -862,7 +864,7 @@ tbody tr:hover td {
     display: grid;
     grid-template-columns: repeat(2, minmax(120px, 1fr));
     gap: 10px;
-    max-height: 520px;
+    max-height: 640px;
     margin-top: 18px;
     opacity: 1;
     overflow: hidden;

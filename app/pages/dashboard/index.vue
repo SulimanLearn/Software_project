@@ -46,6 +46,9 @@
           <NuxtLink to="/dashboard/reports" class="sidebar-link">
             التقارير
           </NuxtLink>
+          <NuxtLink to="/dashboard/articles" class="sidebar-link">
+            إدارة المقالات
+          </NuxtLink>
           <NuxtLink to="/dashboard/inventory" class="sidebar-link">
             مراقبة المخزون
           </NuxtLink>
@@ -71,7 +74,6 @@
             <h1>لوحة التحكم</h1>
             <p>{{ currentArabicDate }}</p>
           </div>
-          <AdminNotifications />
         </header>
 
         <section class="stats-grid" aria-label="إحصائيات لوحة التحكم">
@@ -671,10 +673,6 @@ td {
     flex-direction: row;
   }
 
-  .dashboard-header :deep(.admin-notifications) {
-    flex: 0 0 auto;
-  }
-
   .stats-grid {
     grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
@@ -739,7 +737,7 @@ td {
   }
 
   .sidebar-nav.is-open {
-    max-height: 560px;
+    max-height: 640px;
     margin-top: 18px;
     opacity: 1;
   }
