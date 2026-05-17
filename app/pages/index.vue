@@ -43,7 +43,7 @@
         <section  id="specialties" class="specialties-section" aria-labelledby="specialties-title">
             <div class="specialties-header">
                 <span class="specialties-pill">التخصصات</span>
-                <h2 id="specialties-title">اختر تخصصك الطبي</h2>
+                <h2 id="specialties-title">اختر التخصص الطبي</h2>
                 <p>نوفر أطباء متخصصين في جميع المجالات الطبية لخدماتك على مدار اليوم</p>
             </div>
 
@@ -51,7 +51,7 @@
                 <NuxtLink
                     v-for="specialty in specialtiesWithCounts"
                     :key="specialty.title"
-                    to="/doctors"
+                    :to="{ path: '/doctors', query: { specialty: specialty.slug } }"
                     class="specialty-card"
                     role="listitem"
                     draggable="false"
@@ -243,20 +243,8 @@
 </template>
 
 <script setup>
-const specialties = [
-    { title: 'أمراض القلب', slug: 'cardiology', icon: '/images/heart.svg' },
-    { title: 'طب الأطفال', slug: 'pediatrics', icon: '/images/baby.svg' },
-    { title: 'طب الأسنان', slug: 'dentistry', icon: '/images/tooth.svg' },
-    { title: 'طب العيون', slug: 'ophthalmology', icon: '/images/eye.svg' },
-    { title: 'الطب الباطني', slug: 'internal-medicine', icon: '/images/stethoscope.svg' },
-    { title: 'الجلدية', slug: 'dermatology', icon: '/images/face.svg' },
-    { title: 'الأعصاب', slug: 'neurology', icon: '/images/brain.svg' },
-    { title: 'الطب العام', slug: 'public-medicine', icon: '/images/general.svg' },
-    { title: 'الجراحة العامة', slug: 'general-surgery', icon: '/images/surgery.svg' },
-    { title: 'أنف و أذن و حنجرة', slug: 'ent', icon: '/images/ear.svg' },
-    { title: 'أمراض النساء', slug: 'gynecological-diseases', icon: '/images/woman.svg' },
-    { title: 'علاج طبيعي', slug: 'physical-therapy', icon: '/images/massage.svg' },
-];
+import { doctors } from '~/data/doctors';
+import { specialties } from '~/data/specialties';
 
 const processSteps = [
     {
@@ -322,11 +310,6 @@ const toggleFaq = (index) => {
     activeFaq.value = activeFaq.value === index ? null : index;
 };
 
-// TODO: Backend team should replace this endpoint with the real API
-const { data: specialtyDoctorCounts } = await useFetch('----', {
-    default: () => ({}),
-});
-
 const formatDoctorCount = (count) => {
     const value = Number(count) || 0;
     return `${value} طبيب`;
@@ -334,7 +317,7 @@ const formatDoctorCount = (count) => {
 
 const specialtiesWithCounts = computed(() => specialties.map((specialty) => ({
     ...specialty,
-    count: formatDoctorCount(specialtyDoctorCounts.value?.[specialty.slug]),
+    count: formatDoctorCount(doctors.filter((doctor) => doctor.specialtySlug === specialty.slug).length),
 })));
 
 const showBackToTop = ref(false);
