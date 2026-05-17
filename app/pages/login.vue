@@ -16,9 +16,7 @@
                         <div class="password field">
                             <label for="password-inputfield">كلمة المرور</label>
                             <input type="password" id="password-inputfield" placeholder="........" v-model="password"/>
-                            <p class="error-message" v-if="errorMessage">
-  {{ errorMessage }}
-</p>
+                            <p class="error-message" v-if="errorMessage">{{ errorMessage }}</p>
                             <div class="remmember-and-forget-password">
                                 <div class="remmember-me-btn">
                                     <input type="checkbox" id="remmember-me">
@@ -62,7 +60,7 @@
 <style scoped>
     .container {
         direction: rtl;
-        min-height: 100vh;
+        min-height: 107vh;
         display: flex;
         justify-content: center;
         align-items: center;
