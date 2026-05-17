@@ -52,10 +52,10 @@
           <NuxtLink to="/dashboard/inventory" class="sidebar-link">
             مراقبة المخزون
           </NuxtLink>
-          <NuxtLink to="/dashboard/settings" class="sidebar-link active">
+          <NuxtLink to="/dashboard/settings" class="sidebar-link">
             الإعدادات
           </NuxtLink>
-          <NuxtLink to="/dashboard/activity" class="sidebar-link">
+          <NuxtLink to="/dashboard/activity" class="sidebar-link active">
             سجل النشاطات
           </NuxtLink>
           <button
@@ -71,41 +71,91 @@
       <main class="dashboard-content">
         <header class="page-header">
           <div class="header-row">
-            <h1>إعدادات المنصة</h1>
+            <h1>سجل النشاطات</h1>
           </div>
         </header>
 
-        <section class="settings-card" aria-label="الإعدادات العامة">
-          <h2>الإعدادات العامة</h2>
-
-          <form class="settings-form" @submit.prevent="saveSettings">
-            <label
-              v-for="field in settingsFields"
-              :key="field.id"
-              class="field-group"
-              :for="field.id"
-            >
-              <span>{{ field.label }}</span>
+        <section class="activity-card" aria-label="سجل النشاطات">
+          <div class="table-tools">
+            <label>
+              <span>بحث</span>
               <input
-                :id="field.id"
-                v-model="field.value"
-                type="number"
-                inputmode="numeric"
+                v-model.trim="searchQuery"
+                type="search"
+                placeholder="ابحث بالمستخدم أو العملية أو القسم"
               >
             </label>
 
-            <div class="form-actions">
-              <button type="submit" :disabled="isSaving">
-                {{ isSaving ? 'جاري الحفظ...' : 'حفظ الإعدادات' }}
-              </button>
-            </div>
-          </form>
+            <label>
+              <span>الدور</span>
+              <select v-model="roleFilter">
+                <option value="all">الكل</option>
+                <option value="مدير">مدير</option>
+                <option value="طبيب">طبيب</option>
+                <option value="ممرض">ممرض</option>
+                <option value="صيدلي">صيدلي</option>
+              </select>
+            </label>
+
+            <label>
+              <span>العملية</span>
+              <select v-model="actionFilter">
+                <option value="all">الكل</option>
+                <option value="إضافة">إضافة</option>
+                <option value="تعديل">تعديل</option>
+                <option value="حذف">حذف</option>
+                <option value="تسجيل دخول">تسجيل دخول</option>
+              </select>
+            </label>
+
+            <label>
+              <span>التاريخ</span>
+              <input v-model="dateFilter" type="date">
+            </label>
+          </div>
+
+          <div v-if="isTableLoading" class="loading-state">
+            <span class="spinner" />
+            <p>جاري تحميل البيانات...</p>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>المستخدم</th>
+                  <th>الدور</th>
+                  <th>العملية</th>
+                  <th>القسم</th>
+                  <th>التاريخ</th>
+                  <th>الوقت</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="log in paginatedLogs" :key="log.id">
+                  <td>{{ log.user }}</td>
+                  <td>{{ log.role }}</td>
+                  <td>{{ log.action }}</td>
+                  <td>{{ log.section }}</td>
+                  <td>{{ log.date }}</td>
+                  <td>{{ log.time }}</td>
+                </tr>
+                <tr v-if="!isTableLoading && filteredLogs.length === 0">
+                  <td colspan="6">
+                    {{ activityLogs.length ? 'لا توجد نتائج مطابقة للبحث' : 'لا توجد بيانات متاحة' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <AdminPagination
+            v-if="filteredLogs.length > pageSize"
+            v-model:page="currentPage"
+            :total-pages="totalPages"
+          />
         </section>
       </main>
-    </div>
-
-    <div v-if="toastMessage" class="toast-message">
-      {{ toastMessage }}
     </div>
 
     <div
@@ -140,8 +190,13 @@
 <script setup>
 const isSidebarOpen = ref(false)
 const showLogoutModal = ref(false)
-const isSaving = ref(false)
-const toastMessage = ref('')
+const searchQuery = ref('')
+const roleFilter = ref('all')
+const actionFilter = ref('all')
+const dateFilter = ref('')
+const currentPage = ref(1)
+const pageSize = 4
+const isTableLoading = ref(false)
 const isLoggedIn = useState('isLoggedIn', () => false)
 const user = useState('user', () => ({ name: '' }))
 
@@ -152,43 +207,100 @@ const confirmLogout = async () => {
   await navigateTo('/login')
 }
 
-const settingsFields = reactive([
+const activityLogs = reactive([
   {
-    id: 'default-fee',
-    label: 'رسوم الكشف الافتراضية (₪)',
-    value: 100
+    id: 'log-1',
+    user: 'مدير النظام',
+    role: 'مدير',
+    action: 'إضافة',
+    section: 'المواعيد',
+    date: '15 مايو 2026',
+    sortDate: '2026-05-15',
+    time: '09:15 ص'
   },
   {
-    id: 'appointment-duration',
-    label: 'مدة الموعد (دقيقة)',
-    value: 30
+    id: 'log-2',
+    user: 'د. سارة خالد',
+    role: 'طبيب',
+    action: 'تعديل',
+    section: 'الملف الطبي',
+    date: '15 مايو 2026',
+    sortDate: '2026-05-15',
+    time: '10:00 ص'
   },
   {
-    id: 'daily-limit',
-    label: 'الحد الأقصى للمواعيد اليومية',
-    value: 20
+    id: 'log-3',
+    user: 'أمل يوسف',
+    role: 'ممرض',
+    action: 'إضافة',
+    section: 'طلبات التمريض',
+    date: '14 مايو 2026',
+    sortDate: '2026-05-14',
+    time: '02:20 م'
   },
   {
-    id: 'cancellation-policy',
-    label: 'سياسة الإلغاء (ساعات)',
-    value: 24
+    id: 'log-4',
+    user: 'هبة علي',
+    role: 'صيدلي',
+    action: 'تعديل',
+    section: 'طلبات الأدوية',
+    date: '14 مايو 2026',
+    sortDate: '2026-05-14',
+    time: '03:45 م'
+  },
+  {
+    id: 'log-5',
+    user: 'مدير النظام',
+    role: 'مدير',
+    action: 'حذف',
+    section: 'المرضى',
+    date: '13 مايو 2026',
+    sortDate: '2026-05-13',
+    time: '11:35 ص'
+  },
+  {
+    id: 'log-6',
+    user: 'مدير النظام',
+    role: 'مدير',
+    action: 'تسجيل دخول',
+    section: 'النظام',
+    date: '13 مايو 2026',
+    sortDate: '2026-05-13',
+    time: '08:00 ص'
   }
 ])
 
-const showToast = (message) => {
-  toastMessage.value = message
-  window.setTimeout(() => {
-    toastMessage.value = ''
-  }, 2200)
-}
+const filteredLogs = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
 
-const saveSettings = () => {
-  isSaving.value = true
+  return activityLogs.filter((log) => {
+    const matchesSearch = !query || [log.user, log.action, log.section].some((value) => {
+      return String(value).toLowerCase().includes(query)
+    })
+    const matchesRole = roleFilter.value === 'all' || log.role === roleFilter.value
+    const matchesAction = actionFilter.value === 'all' || log.action === actionFilter.value
+    const matchesDate = !dateFilter.value || log.sortDate === dateFilter.value
+
+    return matchesSearch && matchesRole && matchesAction && matchesDate
+  })
+})
+
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredLogs.value.length / pageSize))
+})
+
+const paginatedLogs = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredLogs.value.slice(start, start + pageSize)
+})
+
+watch([searchQuery, roleFilter, actionFilter, dateFilter], () => {
+  currentPage.value = 1
+  isTableLoading.value = true
   window.setTimeout(() => {
-    isSaving.value = false
-    showToast('تم حفظ الإعدادات بنجاح')
-  }, 350)
-}
+    isTableLoading.value = false
+  }, 250)
+})
 </script>
 
 <style scoped>
@@ -209,7 +321,7 @@ const saveSettings = () => {
   grid-row: 1;
   background-color: #eaf2fd;
   border-left: 1.5px solid #0b63f6;
-  padding: 32px 32px;
+  padding: 32px;
 }
 
 .sidebar-header {
@@ -240,7 +352,6 @@ const saveSettings = () => {
   margin-top: 6px;
   color: #343434;
   font-size: 13px;
-  font-weight: 400;
   text-align: right;
 }
 
@@ -254,7 +365,6 @@ const saveSettings = () => {
   font-size: 16px;
   font-weight: 800;
   text-decoration: none;
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-link:hover,
@@ -273,19 +383,17 @@ const saveSettings = () => {
 
 .dashboard-content {
   grid-column: 2;
-  grid-row: 1;
   padding: 48px 40px 64px;
 }
 
 .page-header {
-  margin-bottom: 70px;
+  margin-bottom: 44px;
 }
 
 .header-row {
   align-items: center;
   display: flex;
   justify-content: space-between;
-  width: 100%;
 }
 
 .page-header h1 {
@@ -294,94 +402,95 @@ const saveSettings = () => {
   font-weight: 900;
 }
 
-.settings-card {
+.activity-card {
   background-color: #eaf2fd;
   border: 1.5px solid #0b63f6;
   border-radius: 24px;
-  min-height: 480px;
-  padding: 44px 72px 42px;
+  min-height: 365px;
+  padding: 42px 56px 38px;
 }
 
-.settings-card h2 {
-  margin: 0 0 26px;
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.settings-form {
+.table-tools {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
-  gap: 34px 32px;
+  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, 220px));
+  gap: 16px;
+  margin-bottom: 26px;
 }
 
-.field-group {
+.table-tools label {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
-.field-group span {
-  font-size: 22px;
-  line-height: 1.3;
+.table-tools span {
+  font-weight: 900;
 }
 
-.field-group input {
-  background-color: #dceafa;
+.table-tools input,
+.table-tools select {
+  background-color: #ffffff;
   border: 1.5px solid #0b63f6;
   border-radius: 14px;
   color: #101010;
   font-family: inherit;
-  font-size: 22px;
-  height: 72px;
-  outline: none;
-  padding: 0 22px;
-  text-align: right;
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.loading-state {
+  align-items: center;
+  color: #115bd2;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.loading-state p {
+  font-weight: 900;
+  margin: 0;
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+  border: 3px solid #d9e9ff;
+  border-top-color: #115bd2;
+  border-radius: 50%;
+  height: 24px;
+  width: 24px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 900px;
   width: 100%;
 }
 
-.field-group input:focus {
-  box-shadow: 0 0 0 3px rgba(11, 99, 246, 0.12);
+th,
+td {
+  border-bottom: 2px solid #8dbbfb;
+  font-size: 16px;
+  padding: 17px 16px;
+  text-align: center;
+  white-space: nowrap;
 }
 
-.form-actions {
-  display: flex;
-  grid-column: 1 / -1;
-  justify-content: flex-start;
-  margin-top: 10px;
+th {
+  font-weight: 800;
 }
 
-.form-actions button {
-  background-color: #115bd2;
-  border: 1px solid #115bd2;
-  border-radius: 24px;
-  color: #ffffff;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 17px;
-  min-width: 180px;
-  padding: 13px 30px;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.form-actions button:hover {
-  background-color: #0b4db8;
-  box-shadow: 0 6px 16px rgba(17, 91, 210, 0.2);
-}
-
-.form-actions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.toast-message {
-  background-color: #115bd2;
-  border-radius: 14px;
-  bottom: 24px;
-  color: #ffffff;
-  font-weight: 900;
-  left: 24px;
-  padding: 12px 18px;
-  position: fixed;
-  z-index: 3000;
+td {
+  height: 66px;
 }
 
 .logout-overlay {
@@ -446,8 +555,8 @@ const saveSettings = () => {
     padding: 36px 24px 48px;
   }
 
-  .settings-card {
-    padding: 38px 36px;
+  .table-tools {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 }
 
@@ -520,32 +629,13 @@ const saveSettings = () => {
     padding: 32px 18px 44px;
   }
 
-  .page-header {
-    margin-bottom: 36px;
-  }
-
-  .page-header h1 {
-    font-size: 26px;
-  }
-
-  .settings-card {
+  .activity-card {
     border-radius: 20px;
-    min-height: auto;
     padding: 28px 22px;
   }
 
-  .settings-form {
+  .table-tools {
     grid-template-columns: 1fr;
-    gap: 24px;
-  }
-
-  .field-group span {
-    font-size: 19px;
-  }
-
-  .field-group input {
-    font-size: 20px;
-    height: 64px;
   }
 }
 
@@ -556,10 +646,6 @@ const saveSettings = () => {
 
   .sidebar-nav {
     grid-template-columns: 1fr;
-  }
-
-  .form-actions button {
-    width: 100%;
   }
 }
 </style>
