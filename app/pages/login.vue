@@ -22,7 +22,7 @@
                                     <input type="checkbox" id="remmember-me">
                                     <label for="remmember-me">ذكرني</label>
                                 </div>
-                                <NuxtLink class="Forgot-password" to="">هل نسيت كلمة المرور؟</NuxtLink>
+                                <NuxtLink class="Forgot-password" to="/reset">هل نسيت كلمة المرور؟</NuxtLink>
                             </div>
                         </div>
                     </div> <!-- .end fields -->
