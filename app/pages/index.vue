@@ -246,6 +246,8 @@
 import { doctors } from '~/data/doctors';
 import { specialties } from '~/data/specialties';
 
+const articles = useArticles();
+
 const processSteps = [
     {
         number: '01',
@@ -276,33 +278,22 @@ const processSteps = [
 const blogSection = {
     actionText: 'عرض كل المنشورات',
     actionLink: '/blog',
-    byText: 'By',
+    byText: 'بواسطة',
     readMoreText: 'اقرأ المزيد',
 };
 
-const blogPosts = [
-    {
-        title: 'عنوان المقالة',
-        date: '10 ماية 2026',
-        author: 'alhayat.medical@gmail.com',
-        image: '/images/process_card_1.jpg',
-        link: '/blog',
-    },
-    {
-        title: 'عنوان المقالة',
-        date: '7 مايو 2026',
-        author: 'alhayat.medical@gmail.com',
-        image: '/images/process_card_2.jpg',
-        link: '/blog',
-    },
-    {
-        title: 'عنوان المقالة',
-        date: '15 مايو 2026',
-        author: 'alhayat.medical@gmail.com',
-        image: '/images/process_card_3.jpg',
-        link: '/blog',
-    },
-];
+const blogPosts = computed(() => {
+    return articles.value
+        .filter(article => article.status === 'published')
+        .slice(0, 3)
+        .map(article => ({
+            title: article.title,
+            date: article.publishDate,
+            author: article.author.name,
+            image: article.imageUrl,
+            link: `/blog/${article.slug}`,
+        }));
+});
 
 const activeFaq = ref(null);
 

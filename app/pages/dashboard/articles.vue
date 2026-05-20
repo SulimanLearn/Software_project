@@ -411,60 +411,8 @@ const articleImagePreview = computed(() => {
   return uploadedImagePreview.value || articleForm.imageUrl
 })
 
-const articles = reactive([
-  {
-    id: 'article-1',
-    title: 'نصائح للحفاظ على صحة القلب',
-    author: {
-      name: 'د. سارة خالد',
-      email: 'sarah.khaled@mediconnect.test'
-    },
-    publishDate: '2026-05-12',
-    imageUrl: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=500&q=80',
-    excerpt: 'خطوات يومية بسيطة تساعد على تقليل مخاطر أمراض القلب وتحسين جودة الحياة.',
-    content: 'تبدأ العناية بصحة القلب من نمط الحياة اليومي. ينصح بالحركة المنتظمة، تقليل الملح، اختيار الدهون الصحية، ومراجعة الطبيب عند ظهور أعراض مثل ألم الصدر أو ضيق النفس. المتابعة الدورية مهمة خصوصا لمن لديهم تاريخ عائلي أو ارتفاع ضغط الدم.',
-    status: 'published'
-  },
-  {
-    id: 'article-2',
-    title: 'متى يحتاج الطفل إلى زيارة طبيب الأطفال؟',
-    author: {
-      name: 'د. عمر حسن',
-      email: 'omar.hassan@mediconnect.test'
-    },
-    publishDate: '2026-05-08',
-    imageUrl: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=500&q=80',
-    excerpt: 'علامات مهمة تساعد الأهل على اتخاذ قرار زيارة الطبيب في الوقت المناسب.',
-    content: 'ينبغي مراجعة طبيب الأطفال عند استمرار الحرارة، صعوبة التنفس، الجفاف، أو تغير نشاط الطفل بشكل واضح. كما أن الزيارات الوقائية ضرورية لمتابعة النمو واللقاحات والكشف المبكر عن أي مشكلة صحية.',
-    status: 'published'
-  },
-  {
-    id: 'article-3',
-    title: 'دليل سريع للعناية بالبشرة في الصيف',
-    author: {
-      name: 'د. ريم يوسف',
-      email: 'reem.yousef@mediconnect.test'
-    },
-    publishDate: '2026-05-15',
-    imageUrl: 'https://images.unsplash.com/photo-1556228724-4d46c1f8136d?auto=format&fit=crop&w=500&q=80',
-    excerpt: 'مسودة مقال عن الترطيب وواقي الشمس والتعامل مع الحساسية الموسمية.',
-    content: 'تحتاج البشرة في الصيف إلى تنظيف لطيف، ترطيب مناسب، واستخدام واقي شمس واسع الطيف. يفضل تجنب التعرض المباشر للشمس وقت الذروة ومراجعة طبيب الجلدية عند ظهور حكة مستمرة أو تصبغات مفاجئة.',
-    status: 'draft'
-  },
-  {
-    id: 'article-4',
-    title: 'الاستعداد الصحيح للفحوصات المخبرية',
-    author: {
-      name: 'مريم ناصر',
-      email: 'mariam.nasser@mediconnect.test'
-    },
-    publishDate: '2026-05-03',
-    imageUrl: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=500&q=80',
-    excerpt: 'إرشادات قبل فحوصات الدم والصيام وتحضير قائمة الأدوية.',
-    content: 'تختلف تعليمات التحضير للفحوصات حسب نوع الفحص. بعض التحاليل تحتاج إلى صيام، وبعضها يتأثر بالأدوية أو وقت أخذ العينة. من الأفضل سؤال الفريق الطبي مسبقا وإحضار أي تقارير سابقة عند الزيارة.',
-    status: 'published'
-  }
-])
+const articlesState = useArticles()
+const articles = articlesState.value
 
 const confirmLogout = async () => {
   isLoggedIn.value = false
@@ -606,6 +554,7 @@ const getNextArticleId = () => {
 }
 
 const getArticlePayload = () => ({
+  slug: createArticleSlug(articleForm.title),
   title: articleForm.title,
   author: {
     name: articleForm.authorName,
