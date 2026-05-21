@@ -417,6 +417,7 @@ const doctors = ref([
 const doctor = computed(() =>
   doctors.value.find((item) => String(item.id) === String(route.params.id)),
 );
+const bookingSummary = useState(`booking-summary-${route.params.id}`, () => ({}));
 
 const selectedAppointmentTime = ref('');
 const selectedDate = ref('');
@@ -530,7 +531,23 @@ const confirmBooking = async () => {
     return;
   }
 
-  await router.push('/patient/booking');
+  bookingSummary.value = {
+    ...bookingSummary.value,
+    doctorId: String(doctor.value.id),
+    doctorName: doctor.value.name,
+    specialty: doctor.value.specialty,
+    date: selectedDate.value
+      ? new Intl.DateTimeFormat('ar', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }).format(new Date(`${selectedDate.value}T12:00:00`))
+      : '',
+    time: selectedAppointmentTime.value,
+    fee: doctor.value.consultationFee,
+  };
+
+  await router.push(`/patient/booking/${doctor.value.id}`);
 };
 
 const submitComment = async () => {
