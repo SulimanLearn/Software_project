@@ -118,6 +118,7 @@
                   <th>المريض</th>
                   <th>الطبيب</th>
                   <th>التاريخ</th>
+                  <th>نوع الموعد</th>
                   <th>الحالة</th>
                   <th>إجراء</th>
                 </tr>
@@ -131,6 +132,11 @@
                   <td>{{ appointment.patient }}</td>
                   <td>{{ appointment.doctor }}</td>
                   <td>{{ appointment.date }}</td>
+                  <td>
+                    <span class="type-pill" :class="appointment.appointmentType === 'أونلاين' ? 'online' : 'clinic'">
+                      {{ appointment.appointmentType }}
+                    </span>
+                  </td>
                   <td>
                     <span class="status-pill" :class="appointment.statusKey">
                       {{ appointment.status }}
@@ -148,7 +154,7 @@
                   </td>
                 </tr>
                 <tr v-if="!isTableLoading && filteredAppointments.length === 0">
-                  <td colspan="6">{{ appointments.length ? 'لا توجد نتائج مطابقة للبحث' : 'لا توجد بيانات متاحة' }}</td>
+                  <td colspan="7">{{ appointments.length ? 'لا توجد نتائج مطابقة للبحث' : 'لا توجد بيانات متاحة' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -246,6 +252,28 @@
             </select>
           </label>
 
+          <label for="edit-type">
+            <span>نوع الموعد</span>
+            <select id="edit-type" v-model="editForm.appointmentType">
+              <option
+                v-for="type in appointmentTypeOptions"
+                :key="type"
+                :value="type"
+              >
+                {{ type }}
+              </option>
+            </select>
+          </label>
+
+          <label v-if="editForm.appointmentType === 'أونلاين'" for="edit-meeting">
+            <span>رابط الاجتماع</span>
+            <input
+              id="edit-meeting"
+              v-model.trim="editForm.meetingLink"
+              type="url"
+            >
+          </label>
+
           <div class="modal-actions">
             <button type="submit">
               حفظ التعديل
@@ -304,7 +332,9 @@ const editingAppointment = ref(null)
 const editForm = reactive({
   date: '',
   time: '',
-  statusKey: 'confirmed'
+  statusKey: 'confirmed',
+  appointmentType: 'في العيادة',
+  meetingLink: ''
 })
 
 const confirmLogout = async () => {
@@ -328,6 +358,8 @@ const statusOptions = [
   { label: 'مكتملة', value: 'completed' }
 ]
 
+const appointmentTypeOptions = ['في العيادة', 'أونلاين']
+
 const appointments = reactive([
   {
     bookingNumber: 'A-1024',
@@ -338,7 +370,9 @@ const appointments = reactive([
     sortDate: '2026-04-22',
     time: '09:30 ص',
     status: 'مؤكدة',
-    statusKey: 'confirmed'
+    statusKey: 'confirmed',
+    appointmentType: 'في العيادة',
+    meetingLink: ''
   },
   {
     bookingNumber: 'A-1025',
@@ -349,7 +383,9 @@ const appointments = reactive([
     sortDate: '2026-04-22',
     time: '10:15 ص',
     status: 'انتظار',
-    statusKey: 'waiting'
+    statusKey: 'waiting',
+    appointmentType: 'أونلاين',
+    meetingLink: 'https://meet.google.com/demo-link'
   },
   {
     bookingNumber: 'A-1026',
@@ -360,7 +396,9 @@ const appointments = reactive([
     sortDate: '2026-04-23',
     time: '12:00 م',
     status: 'ملغية',
-    statusKey: 'cancelled'
+    statusKey: 'cancelled',
+    appointmentType: 'أونلاين',
+    meetingLink: ''
   },
   {
     bookingNumber: 'A-1027',
@@ -371,7 +409,9 @@ const appointments = reactive([
     sortDate: '2026-04-24',
     time: '01:30 م',
     status: 'مؤكدة',
-    statusKey: 'confirmed'
+    statusKey: 'confirmed',
+    appointmentType: 'في العيادة',
+    meetingLink: ''
   }
 ])
 
@@ -427,6 +467,13 @@ const appointmentDetails = computed(() => {
     { label: 'التخصص', value: selectedAppointment.value.specialty },
     { label: 'التاريخ', value: selectedAppointment.value.date },
     { label: 'الوقت', value: selectedAppointment.value.time },
+    { label: 'نوع الموعد', value: selectedAppointment.value.appointmentType },
+    {
+      label: 'رابط الاجتماع',
+      value: selectedAppointment.value.appointmentType === 'أونلاين'
+        ? selectedAppointment.value.meetingLink || 'لا يوجد رابط'
+        : 'غير مطلوب'
+    },
     { label: 'الحالة', value: selectedAppointment.value.status }
   ]
 })
@@ -440,6 +487,8 @@ const openEditModal = (appointment) => {
   editForm.date = appointment.date
   editForm.time = appointment.time
   editForm.statusKey = appointment.statusKey
+  editForm.appointmentType = appointment.appointmentType
+  editForm.meetingLink = appointment.meetingLink || ''
 }
 
 const closeAppointmentModals = () => {
@@ -460,6 +509,8 @@ const saveAppointmentEdit = () => {
   editingAppointment.value.time = editForm.time
   editingAppointment.value.statusKey = editForm.statusKey
   editingAppointment.value.status = selectedStatus?.label || editingAppointment.value.status
+  editingAppointment.value.appointmentType = editForm.appointmentType
+  editingAppointment.value.meetingLink = editForm.appointmentType === 'أونلاين' ? editForm.meetingLink : ''
   closeAppointmentModals()
   showToast('تم حفظ التعديلات بنجاح')
 }
@@ -666,7 +717,7 @@ const saveAppointmentEdit = () => {
 
 table {
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 980px;
   width: 100%;
 }
 
@@ -698,12 +749,39 @@ td {
   padding: 5px 12px;
 }
 
+.status-pill.completed {
+  background-color: #dff3e7;
+  color: #137446;
+}
+
+.type-pill {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 900;
+  justify-content: center;
+  min-width: 86px;
+  padding: 5px 12px;
+}
+
+.type-pill.online {
+  background-color: #dcecff;
+  color: #115bd2;
+}
+
+.type-pill.clinic {
+  background-color: #e9f7ef;
+  color: #137446;
+}
+
 .status-pill.waiting {
-  color: #4f86de;
+  background-color: #fff2d8;
+  color: #9a6507;
 }
 
 .status-pill.cancelled {
-  color: #707070;
+  background-color: #ffe4e4;
+  color: #b42318;
 }
 
 .action-buttons {

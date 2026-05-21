@@ -7,20 +7,30 @@
 
       <main class="doctor-simple-content">
         <header class="page-header">
-          <h1>الملف الشخصي</h1>
-          <p>بيانات الطبيب ومعلومات الحساب.</p>
+          <h1>الإعدادات</h1>
+          <p>إعدادات حساب الطبيب والتنبيهات.</p>
         </header>
 
-        <section class="profile-card">
-          <img :src="doctor.avatar" :alt="doctor.name">
-          <div>
-            <span>اسم الطبيب</span>
-            <strong>{{ doctor.name }}</strong>
-          </div>
-          <div>
-            <span>التخصص</span>
-            <strong>{{ doctor.specialization }}</strong>
-          </div>
+        <section class="settings-card" aria-label="إعدادات الطبيب">
+          <label>
+            <span>تنبيهات المواعيد</span>
+            <select v-model="settings.appointmentAlerts">
+              <option value="enabled">مفعلة</option>
+              <option value="disabled">غير مفعلة</option>
+            </select>
+          </label>
+
+          <label>
+            <span>لغة الواجهة</span>
+            <select v-model="settings.language">
+              <option value="ar">العربية</option>
+            </select>
+          </label>
+
+          <label class="wide-field">
+            <span>ملاحظات داخلية</span>
+            <textarea v-model.trim="settings.notes" rows="4" />
+          </label>
         </section>
       </main>
     </div>
@@ -66,6 +76,12 @@ const doctor = {
   avatar: '/images/doctor.png'
 }
 
+const settings = reactive({
+  appointmentAlerts: 'enabled',
+  language: 'ar',
+  notes: ''
+})
+
 const confirmLogout = async () => {
   isLoggedIn.value = false
   user.value = { name: '' }
@@ -108,80 +124,73 @@ const confirmLogout = async () => {
   margin: 0;
 }
 
-.profile-card {
-  align-items: center;
+.settings-card {
   background-color: #eaf2fd;
   border: 1.5px solid #0b63f6;
   border-radius: 24px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 22px;
 }
 
-.profile-card img {
-  background-color: #ffffff;
-  border: 1px solid #8dbbfb;
-  border-radius: 18px;
-  height: 76px;
-  object-fit: contain;
-  padding: 8px;
-  width: 86px;
+.settings-card label {
+  color: #343434;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  font-weight: 900;
+  gap: 8px;
 }
 
-.profile-card div {
+.settings-card select,
+.settings-card textarea {
   background-color: #ffffff;
   border: 1px solid #8dbbfb;
   border-radius: 14px;
-  flex: 1 1 190px;
-  padding: 14px 16px;
+  color: #101010;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  min-height: 44px;
+  outline: none;
+  padding: 10px 12px;
 }
 
-.profile-card span {
-  color: #343434;
-  display: block;
-  font-size: 13px;
-  font-weight: 900;
-  margin-bottom: 8px;
-}
-
-.profile-card strong {
-  font-size: 16px;
-  font-weight: 900;
+.wide-field {
+  grid-column: 1 / -1;
 }
 
 .modal-overlay {
   align-items: center;
-  background-color: rgba(68, 139, 239, 0.38);
+  background-color: rgba(68, 139, 239, 0.35);
   display: flex;
   inset: 0;
   justify-content: center;
   padding: 24px;
   position: fixed;
-  z-index: 2000;
+  z-index: 1000;
 }
 
 .confirmation-modal {
   background-color: #eaf2fd;
   border: 1.5px solid #0b63f6;
   border-radius: 24px;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
-  max-width: 100%;
   padding: 42px 44px 34px;
   text-align: center;
-  width: 560px;
+  width: min(560px, 100%);
 }
 
 .confirmation-modal h2 {
   font-size: 26px;
   font-weight: 900;
-  margin: 0 0 14px;
+  margin: 0;
 }
 
 .confirmation-modal p {
   font-size: 22px;
   font-weight: 800;
-  margin: 0 0 30px;
+  margin: 14px 0 30px;
 }
 
 .modal-actions {
@@ -190,36 +199,27 @@ const confirmLogout = async () => {
   justify-content: center;
 }
 
-.modal-actions button {
+.save-button,
+.cancel-button {
   border-radius: 18px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   min-width: 110px;
-  padding: 10px 22px;
+  padding: 10px 26px;
 }
 
 .save-button {
-  background-color: #115bd2;
-  border: 1px solid #115bd2;
+  background-color: #5a99ef;
+  border: 1px solid #0b63f6;
   color: #ffffff;
 }
 
 .cancel-button {
   background-color: #ffffff;
-  border: 1px solid #0b63f6;
-  color: #115bd2;
-}
-
-@media (max-width: 1030px) {
-  .doctor-simple-shell {
-    grid-template-columns: 240px minmax(0, 1fr);
-  }
-
-  .doctor-simple-content {
-    padding: 32px 24px 48px;
-  }
+  border: 1px solid #8dbbfb;
+  color: #101010;
 }
 
 @media (max-width: 720px) {
@@ -231,19 +231,9 @@ const confirmLogout = async () => {
   .doctor-simple-content {
     padding: 32px 18px 44px;
   }
-}
 
-@media (max-width: 560px) {
-  .doctor-simple-content {
-    padding: 28px 14px 36px;
-  }
-
-  .modal-actions {
-    flex-direction: column;
-  }
-
-  .modal-actions button {
-    width: 100%;
+  .settings-card {
+    grid-template-columns: 1fr;
   }
 }
 </style>
