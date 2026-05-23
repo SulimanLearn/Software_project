@@ -17,7 +17,9 @@
               <button type="button" aria-label="الأسبوع السابق" @click="goToPreviousWeek">
                 <ChevronRight :size="19" :stroke-width="2.4" aria-hidden="true" />
               </button>
-              <strong>{{ weekDateRange }}</strong>
+              <strong class="week-range" :class="{ 'is-week-changing': isWeekChanging }">
+                {{ weekDateRange }}
+              </strong>
               <button type="button" aria-label="الأسبوع التالي" @click="goToNextWeek">
                 <ChevronLeft :size="19" :stroke-width="2.4" aria-hidden="true" />
               </button>
@@ -55,6 +57,7 @@
                 v-for="day in days"
                 :key="day.key"
                 class="grid-cell day-cell"
+                :class="{ 'is-week-changing': isWeekChanging }"
                 role="columnheader"
               >
                 <strong>{{ day.label }}</strong>
@@ -222,7 +225,9 @@ import DoctorSidebar from '~/components/doctor/DoctorSidebar.vue'
 const showLogoutModal = ref(false)
 const activeModal = ref(null)
 const toastMessage = ref('')
+const isWeekChanging = ref(false)
 let toastTimer
+let weekFeedbackTimer
 
 const isLoggedIn = useState('isLoggedIn', () => false)
 const user = useState('user', () => ({ name: '' }))
@@ -364,12 +369,26 @@ function dayDateLabel(dayIndex) {
   }).format(addDays(currentWeekStart.value, dayIndex))
 }
 
+function triggerWeekChangeFeedback() {
+  isWeekChanging.value = false
+  clearTimeout(weekFeedbackTimer)
+
+  requestAnimationFrame(() => {
+    isWeekChanging.value = true
+    weekFeedbackTimer = setTimeout(() => {
+      isWeekChanging.value = false
+    }, 720)
+  })
+}
+
 function goToPreviousWeek() {
   currentWeekStart.value = addDays(currentWeekStart.value, -7)
+  triggerWeekChangeFeedback()
 }
 
 function goToNextWeek() {
   currentWeekStart.value = addDays(currentWeekStart.value, 7)
+  triggerWeekChangeFeedback()
 }
 
 function slotFor(dayKey, periodKey) {
@@ -466,6 +485,7 @@ const confirmLogout = async () => {
 
 onBeforeUnmount(() => {
   clearTimeout(toastTimer)
+  clearTimeout(weekFeedbackTimer)
 })
 </script>
 
@@ -519,21 +539,31 @@ onBeforeUnmount(() => {
 
 .week-controls {
   align-items: center;
-  background-color: #eaf2fd;
-  border: 1.5px solid #0b63f6;
+  background-color: #f3f8ff;
+  border: 1.5px solid #9bc3ff;
   border-radius: 22px;
+  box-shadow: 0 10px 24px rgba(17, 91, 210, 0.08);
   display: inline-flex;
-  gap: 12px;
+  gap: 10px;
   min-height: 50px;
   padding: 6px 10px;
 }
 
-.week-controls strong {
+.week-range {
+  background-color: #ffffff;
+  border: 1px solid #cfe1fb;
+  border-radius: 16px;
   color: #101010;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 900;
-  min-width: 202px;
+  min-width: 258px;
+  padding: 9px 18px;
   text-align: center;
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+}
+
+.week-range.is-week-changing {
+  animation: weekRangeFlash 720ms ease;
 }
 
 .week-controls button,
@@ -550,6 +580,10 @@ onBeforeUnmount(() => {
   padding: 0;
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   width: 38px;
+}
+
+.week-controls button:hover {
+  box-shadow: 0 8px 16px rgba(17, 91, 210, 0.16);
 }
 
 .week-controls button:hover,
@@ -667,52 +701,55 @@ onBeforeUnmount(() => {
 
 .calendar-scroll {
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding: 2px 2px 6px;
 }
 
 .schedule-grid {
+  background-color: #dceaff;
+  border: 1px solid #dceaff;
+  border-radius: 20px;
   display: grid;
-  grid-template-columns: minmax(132px, 0.9fr) repeat(7, minmax(132px, 1fr));
-  min-width: 1080px;
+  gap: 1px;
+  grid-auto-rows: minmax(94px, auto);
+  grid-template-columns: repeat(8, minmax(136px, 1fr));
+  min-width: 1120px;
+  overflow: hidden;
 }
 
 .grid-cell {
   align-items: center;
   background-color: #ffffff;
-  border-bottom: 1px solid #d4e3f8;
-  border-left: 1px solid #d4e3f8;
+  border: 0;
   display: flex;
   justify-content: center;
-  min-height: 86px;
+  min-height: 94px;
   padding: 14px 12px;
-}
-
-.grid-cell:nth-child(-n + 8) {
-  border-top: 1px solid #d4e3f8;
-}
-
-.grid-cell:nth-child(8n + 1) {
-  border-right: 1px solid #d4e3f8;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
 }
 
 .corner-cell {
-  border-radius: 0 18px 0 0;
+  background-color: #f7fbff;
   color: #343434;
   font-weight: 900;
 }
 
 .day-cell {
+  background-color: #f9fcff;
   flex-direction: column;
   gap: 5px;
-}
-
-.day-cell:last-child {
-  border-radius: 18px 0 0 0;
 }
 
 .day-cell strong {
   font-size: 16px;
   font-weight: 900;
+}
+
+.day-cell.is-week-changing {
+  animation: dayHeaderFlash 720ms ease;
+}
+
+.day-cell.is-week-changing span {
+  color: #115bd2;
 }
 
 .day-cell span,
@@ -737,7 +774,6 @@ onBeforeUnmount(() => {
 }
 
 .schedule-slot {
-  border-top: 0;
   cursor: pointer;
   flex-direction: column;
   font-family: inherit;
@@ -763,6 +799,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   min-width: 86px;
   padding: 7px 12px;
+  white-space: nowrap;
 }
 
 .slot-available .slot-status {
@@ -788,6 +825,43 @@ onBeforeUnmount(() => {
 
 .slot-empty .slot-time {
   color: #9aa4b2;
+}
+
+@keyframes dayHeaderFlash {
+  0% {
+    background-color: #f9fcff;
+    box-shadow: inset 0 0 0 0 rgba(17, 91, 210, 0);
+  }
+
+  28% {
+    background-color: #dcecff;
+    box-shadow: inset 0 -3px 0 rgba(17, 91, 210, 0.16);
+  }
+
+  100% {
+    background-color: #f9fcff;
+    box-shadow: inset 0 0 0 0 rgba(17, 91, 210, 0);
+  }
+}
+
+@keyframes weekRangeFlash {
+  0% {
+    background-color: #ffffff;
+    border-color: #cfe1fb;
+    box-shadow: none;
+  }
+
+  30% {
+    background-color: #e3f0ff;
+    border-color: #7fb2ff;
+    box-shadow: 0 8px 18px rgba(17, 91, 210, 0.12);
+  }
+
+  100% {
+    background-color: #ffffff;
+    border-color: #cfe1fb;
+    box-shadow: none;
+  }
 }
 
 .modal-overlay {
@@ -1005,8 +1079,9 @@ onBeforeUnmount(() => {
     width: 100%;
   }
 
-  .week-controls strong {
+  .week-range {
     min-width: 0;
+    width: 100%;
   }
 
   .add-period-button {

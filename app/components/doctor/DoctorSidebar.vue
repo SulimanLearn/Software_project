@@ -66,6 +66,7 @@ const isSidebarOpen = ref(false)
 const menuItems = [
   { key: 'dashboard', label: 'لوحة البيانات', to: '/doctor', paths: ['/doctor'] },
   { key: 'appointments', label: 'المواعيد', to: '/doctor/appointments', paths: ['/doctor/appointments'] },
+  { key: 'patients', label: 'المرضى', to: '/doctor/my-patients', paths: ['/doctor/my-patients', '/doctor/patients', '/doctor/diagnosis', '/doctor/prescriptions'] },
   { key: 'schedule', label: 'جدول العمل', to: '/doctor/schedule', paths: ['/doctor/schedule'] },
   { key: 'profile', label: 'الملف الشخصي', to: '/doctor/profile', paths: ['/doctor/profile'] },
   { key: 'settings', label: 'الإعدادات', to: '/doctor/settings', paths: ['/doctor/settings'] }
