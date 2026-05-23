@@ -13,9 +13,9 @@
                     <NuxtLink to="/doctors" class="hero-btn hero-btn-primary">
                     ابحث عن الطبيب
                     </NuxtLink>
-                    <NuxtLink to="/specialties" class="hero-btn hero-btn-outline">
+                    <button type="button" class="hero-btn hero-btn-outline" @click="goToNursingRequest">
                     اطلب ممرض
-                    </NuxtLink>
+                    </button>
                 </div>
 
                 <dl class="hero-stats">
@@ -296,6 +296,11 @@ const blogPosts = computed(() => {
 });
 
 const activeFaq = ref(null);
+const isLoggedIn = useState('isLoggedIn', () => false);
+
+const goToNursingRequest = async () => {
+    await navigateTo(isLoggedIn.value ? '/nursing' : '/login');
+};
 
 const toggleFaq = (index) => {
     activeFaq.value = activeFaq.value === index ? null : index;
@@ -469,9 +474,11 @@ useHead({
         align-items: center;
         justify-content: center;
         border-radius: 25px;
+        font-family: inherit;
         font-size: 18px;
         font-weight: 700;
         text-decoration: none;
+        cursor: pointer;
         transition: transform 0.25s ease, background-color 0.25s ease, color 0.25s ease;
     }
 

@@ -615,6 +615,8 @@ const toastMessage = ref('')
 const pageSize = 3
 const isLoggedIn = useState('isLoggedIn', () => false)
 const user = useState('user', () => ({ name: '' }))
+const { nurses: nursesState, syncNurseStatus } = useNurses()
+const nurses = nursesState.value
 
 const roleLabels = {
   doctor: 'طبيب',
@@ -978,54 +980,6 @@ const doctors = reactive([
   }
 ])
 
-const nurses = reactive([
-  {
-    id: 'nurse-1',
-    user: {
-      fullName: 'أمل يوسف',
-      email: 'amal.yousef@mediconnect.test',
-      password: 'demo-password',
-      phone: '056-332-9081',
-      role: 'nurse'
-    },
-    name: 'أمل يوسف',
-    address: 'رام الله - الماصيون',
-    shift: 'صباحية',
-    patients: 18,
-    active: true
-  },
-  {
-    id: 'nurse-2',
-    user: {
-      fullName: 'مريم ناصر',
-      email: 'mariam.nasser@mediconnect.test',
-      password: 'demo-password',
-      phone: '059-654-2210',
-      role: 'nurse'
-    },
-    name: 'مريم ناصر',
-    address: 'البيرة - البالوع',
-    shift: 'مسائية',
-    patients: 12,
-    active: true
-  },
-  {
-    id: 'nurse-3',
-    user: {
-      fullName: 'سامي محمود',
-      email: 'sami.mahmoud@mediconnect.test',
-      password: 'demo-password',
-      phone: '056-111-7832',
-      role: 'nurse'
-    },
-    name: 'سامي محمود',
-    address: 'نابلس - رفيديا',
-    shift: 'ليلية',
-    patients: 15,
-    active: false
-  }
-])
-
 const pharmacists = reactive([
   {
     id: 'pharmacist-1',
@@ -1138,6 +1092,13 @@ const saveNurse = () => {
       role: nurseForm.role
     },
     name: nurseForm.fullName,
+    gender: '',
+    specialty: 'تمريض عام',
+    experienceYears: 0,
+    price: 120,
+    availabilityStatus: 'غير محددة',
+    image: '/images/doctor.png',
+    isActive: nurseForm.status === 'نشط',
     address: nurseForm.address,
     shift: 'غير محددة',
     patients: 0,
@@ -1208,6 +1169,9 @@ const saveStaffEdit = () => {
   }
   member.name = editForm.fullName
   member.active = editForm.status === 'نشط'
+  if (activeEditRole.value === 'nurse') {
+    syncNurseStatus(member, member.active)
+  }
 
   if (activeEditRole.value === 'doctor') {
     member.specialty = editForm.specialty
