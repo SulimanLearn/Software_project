@@ -75,9 +75,6 @@
               <colgroup>
                 <col class="col-file">
                 <col class="col-patient">
-                <col class="col-age">
-                <col class="col-gender">
-                <col class="col-phone">
                 <col class="col-visit">
                 <col class="col-count">
                 <col class="col-diagnosis">
@@ -88,14 +85,11 @@
                 <tr>
                   <th>رقم الملف</th>
                   <th>اسم المريض</th>
-                  <th>العمر</th>
-                  <th>الجنس</th>
-                  <th>رقم الهاتف</th>
                   <th>آخر زيارة</th>
                   <th>عدد الزيارات</th>
                   <th>آخر تشخيص</th>
                   <th>حالة المتابعة</th>
-                  <th>إجراء</th>
+                  <th>الإجراءات</th>
                 </tr>
               </thead>
               <tbody v-if="paginatedPatientsCount">
@@ -107,9 +101,6 @@
                       <span>{{ patient.email || 'غير متوفر' }}</span>
                     </div>
                   </td>
-                  <td>{{ patient.age || 'غير متوفر' }}</td>
-                  <td>{{ patient.gender || 'غير متوفر' }}</td>
-                  <td class="phone-cell">{{ patient.phone || 'غير متوفر' }}</td>
                   <td>{{ formatDate(patient.lastVisit) }}</td>
                   <td>{{ patient.visitCount || 0 }}</td>
                   <td class="diagnosis-cell">{{ patient.latestDiagnosis || 'غير متوفر' }}</td>
@@ -758,49 +749,37 @@ onBeforeUnmount(() => {
 .patients-table {
   border-collapse: separate;
   border-spacing: 0 10px;
-  min-width: 1600px;
+  min-width: 1280px;
   table-layout: fixed;
   width: 100%;
 }
 
 .col-file {
-  width: 110px;
+  width: 120px;
 }
 
 .col-patient {
-  width: 220px;
-}
-
-.col-age {
-  width: 72px;
-}
-
-.col-gender {
-  width: 82px;
-}
-
-.col-phone {
-  width: 130px;
+  width: 240px;
 }
 
 .col-visit {
-  width: 124px;
+  width: 135px;
 }
 
 .col-count {
-  width: 100px;
+  width: 110px;
 }
 
 .col-diagnosis {
-  width: 238px;
+  width: auto;
 }
 
 .col-status {
-  width: 138px;
+  width: 155px;
 }
 
 .col-actions {
-  width: 380px;
+  width: 320px;
 }
 
 .patients-table th {
@@ -834,8 +813,7 @@ onBeforeUnmount(() => {
   border-radius: 18px 0 0 18px;
 }
 
-.file-number,
-.phone-cell {
+.file-number {
   color: #115bd2;
   white-space: nowrap;
 }
@@ -1185,7 +1163,7 @@ onBeforeUnmount(() => {
   }
 
   .patients-table {
-    min-width: 1380px;
+    min-width: 980px;
   }
 
   .col-actions {
