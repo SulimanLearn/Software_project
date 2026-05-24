@@ -398,7 +398,7 @@ const logout = () => {
     background-color: #E5E7EB;
 }
 
-/* Confirm */
+
 
 .confirm-btn {
 

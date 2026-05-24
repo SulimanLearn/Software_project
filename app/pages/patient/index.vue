@@ -3,7 +3,7 @@
 
         <div class="parent-page">
 
-            <!-- Navbar -->
+            
             <NavBar />
 
             <!-- Sidebar -->

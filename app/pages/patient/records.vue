@@ -600,7 +600,6 @@ const downloadPDF = () => {
     cursor: pointer;
 }
 
-/* ========================= */
 /* Responsive */
 /* ========================= */
 

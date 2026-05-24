@@ -2,7 +2,7 @@
 
     <div class="profile-page">
 
-        <!-- Navbar -->
+        
         <NavBar />
 
         <div class="parent-page">
