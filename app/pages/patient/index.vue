@@ -3,7 +3,7 @@
 
         <div class="parent-page">
 
-            
+            <!-- Navbar -->
             <NavBar />
 
             <!-- Sidebar -->
@@ -140,7 +140,6 @@
 
     </div>
 </template>
-
 <script setup>
 
 import { ref , onMounted } from 'vue'

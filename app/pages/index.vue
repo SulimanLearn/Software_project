@@ -13,9 +13,9 @@
                     <NuxtLink to="/doctors" class="hero-btn hero-btn-primary">
                     ابحث عن الطبيب
                     </NuxtLink>
-                    <NuxtLink to="/specialties" class="hero-btn hero-btn-outline">
+                    <button type="button" class="hero-btn hero-btn-outline" @click="goToNursingRequest">
                     اطلب ممرض
-                    </NuxtLink>
+                    </button>
                 </div>
 
                 <dl class="hero-stats">
@@ -246,6 +246,8 @@
 import { doctors } from '~/data/doctors';
 import { specialties } from '~/data/specialties';
 
+const articles = useArticles();
+
 const processSteps = [
     {
         number: '01',
@@ -276,35 +278,29 @@ const processSteps = [
 const blogSection = {
     actionText: 'عرض كل المنشورات',
     actionLink: '/blog',
-    byText: 'By',
+    byText: 'بواسطة',
     readMoreText: 'اقرأ المزيد',
 };
 
-const blogPosts = [
-    {
-        title: 'عنوان المقالة',
-        date: '10 ماية 2026',
-        author: 'alhayat.medical@gmail.com',
-        image: '/images/process_card_1.jpg',
-        link: '/blog',
-    },
-    {
-        title: 'عنوان المقالة',
-        date: '7 مايو 2026',
-        author: 'alhayat.medical@gmail.com',
-        image: '/images/process_card_2.jpg',
-        link: '/blog',
-    },
-    {
-        title: 'عنوان المقالة',
-        date: '15 مايو 2026',
-        author: 'alhayat.medical@gmail.com',
-        image: '/images/process_card_3.jpg',
-        link: '/blog',
-    },
-];
+const blogPosts = computed(() => {
+    return articles.value
+        .filter(article => article.status === 'published')
+        .slice(0, 3)
+        .map(article => ({
+            title: article.title,
+            date: article.publishDate,
+            author: article.author.name,
+            image: article.imageUrl,
+            link: `/blog/${article.slug}`,
+        }));
+});
 
 const activeFaq = ref(null);
+const isLoggedIn = useState('isLoggedIn', () => false);
+
+const goToNursingRequest = async () => {
+    await navigateTo(isLoggedIn.value ? '/nursing' : '/login');
+};
 
 const toggleFaq = (index) => {
     activeFaq.value = activeFaq.value === index ? null : index;
@@ -478,9 +474,11 @@ useHead({
         align-items: center;
         justify-content: center;
         border-radius: 25px;
+        font-family: inherit;
         font-size: 18px;
         font-weight: 700;
         text-decoration: none;
+        cursor: pointer;
         transition: transform 0.25s ease, background-color 0.25s ease, color 0.25s ease;
     }
 
