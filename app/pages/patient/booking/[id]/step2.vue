@@ -671,7 +671,7 @@ watch(
 }
 
 .remote-warning {
-  margin: -12px 0 22px;
+  margin: 0 0 22px;
   color: #1d4ed8;
   font-size: 0.93rem;
   font-weight: 700;
@@ -1088,7 +1088,7 @@ watch(
 }
 
 .remote-warning {
-  margin: -8px 0 16px;
+  margin: 0 0 16px;
   font-size: 0.86rem;
 }
 

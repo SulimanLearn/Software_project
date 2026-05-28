@@ -1,445 +1,265 @@
-<script setup>
-
-const showLogoutModal = ref(false)
-
-const openLogoutModal = () => {
-
-    showLogoutModal.value = true
-}
-
-const closeLogoutModal = () => {
-
-    showLogoutModal.value = false
-}
-
-const logout = () => {
-
-    // هون لاحقاً تحذف التوكن او السيشن
-    // localStorage.removeItem("token")
-
-    navigateTo("/")
-
-}
-
-</script>
-
 <template>
-
-    <div class="container-sideBarPatient">
-
-        <!-- Patient Info -->
-        <div class="patient-info">
-
-            <div class="patient-img">
-                <img src="/images/patientImage.png" alt="">
-            </div>
-
-            <h1 class="patient-name">
-                محمد ابو حليمة
-            </h1>
-
-            <p>مريض</p>
-
+  <aside class="patient-sidebar" aria-label="لوحة المريض">
+    <div class="sidebar-header">
+      <div class="patient-profile-card">
+        <div class="patient-avatar" aria-hidden="true">
+          <img v-if="patient.avatar" :src="patient.avatar" :alt="patient.name">
+          <UserRound v-else :size="34" :stroke-width="2.2" />
         </div>
+        <strong>{{ patient.name }}</strong>
+        <span>{{ patient.role }}</span>
+      </div>
 
-        <!-- Links -->
-        <NuxtLink class="link" to="/patient">
-            نظرة عامة
-        </NuxtLink>
-
-        <NuxtLink class="link" to="/patient/appointments">
-            مواعيدي
-        </NuxtLink>
-
-        <NuxtLink class="link" to="/patient/records">
-            السجل الطبي
-        </NuxtLink>
-
-        <NuxtLink class="link" to="/patient/profile">
-            ملفي
-        </NuxtLink>
-
-        <!-- Logout -->
-        <button
-            class="link logout-btn"
-            @click="openLogoutModal"
-        >
-            خروج
-        </button>
-
-        <!-- ========================= -->
-        <!-- Logout Modal -->
-        <!-- ========================= -->
-
-        <div
-            v-if="showLogoutModal"
-            class="modal-overlay"
-        >
-
-            <div class="logout-modal">
-
-                <div class="modal-icon">
-                    ⚠️
-                </div>
-
-                <h2>
-                    تسجيل الخروج
-                </h2>
-
-                <p>
-                    هل أنت متأكد أنك تريد تسجيل الخروج؟
-                </p>
-
-                <div class="modal-actions">
-
-                    <button
-                        class="cancel-btn"
-                        @click="closeLogoutModal"
-                    >
-                        إلغاء
-                    </button>
-
-                    <button
-                        class="confirm-btn"
-                        @click="logout"
-                    >
-                        نعم، تسجيل الخروج
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
+      <button
+        class="sidebar-toggle"
+        type="button"
+        :aria-expanded="isSidebarOpen"
+        aria-controls="patient-sidebar-nav"
+        aria-label="فتح وإغلاق قائمة المريض"
+        @click="isSidebarOpen = !isSidebarOpen"
+      >
+        <span />
+        <span />
+        <span />
+      </button>
     </div>
 
+    <nav
+      id="patient-sidebar-nav"
+      class="sidebar-nav"
+      :class="{ 'is-open': isSidebarOpen }"
+    >
+      <NuxtLink
+        v-for="item in menuItems"
+        :key="item.key"
+        :to="item.to"
+        class="sidebar-link"
+        :class="{ active: isActive(item) }"
+      >
+        {{ item.label }}
+      </NuxtLink>
+
+      <button class="sidebar-link logout-link" type="button" @click="$emit('logout')">
+        خروج
+      </button>
+    </nav>
+  </aside>
 </template>
 
+<script setup>
+import { UserRound } from '@lucide/vue'
+import { patientProfile } from '~/data/patientPortal'
+
+defineEmits(['logout'])
+
+defineProps({
+  patient: {
+    type: Object,
+    default: () => patientProfile
+  }
+})
+
+const route = useRoute()
+const isSidebarOpen = ref(false)
+
+const menuItems = [
+  { key: 'overview', label: 'نظرة عامة', to: '/patient', paths: ['/patient'] },
+  { key: 'appointments', label: 'مواعيدي', to: '/patient/appointments', paths: ['/patient/appointments', '/patient/book-appointment', '/patient/booking'] },
+  { key: 'records', label: 'السجل الطبي', to: '/patient/records', paths: ['/patient/records'] },
+  { key: 'prescriptions', label: 'الوصفات الطبية', to: '/patient/prescriptions', paths: ['/patient/prescriptions'] },
+  { key: 'orders', label: 'طلبات الأدوية', to: '/patient/orders', paths: ['/patient/orders'] },
+  { key: 'nursing', label: 'التمريض المنزلي', to: '/patient/nursing', paths: ['/patient/nursing'] },
+  { key: 'notifications', label: 'الإشعارات', to: '/patient/notifications', paths: ['/patient/notifications'] },
+  { key: 'profile', label: 'ملفي', to: '/patient/profile', paths: ['/patient/profile'] }
+]
+
+const isActive = (item) => {
+  if (item.key === 'overview') {
+    return route.path === '/patient'
+  }
+
+  return item.paths.some((path) => route.path === path || route.path.startsWith(`${path}/`))
+}
+</script>
+
 <style scoped>
+.patient-sidebar {
+  background-color: #eaf2fd;
+  border-left: 1.5px solid #0b63f6;
+  padding: 32px;
+}
 
-/* ========================= */
-/* Sidebar */
-/* ========================= */
+.sidebar-header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
 
-.container-sideBarPatient {
+.patient-profile-card {
+  align-items: center;
+  background-color: #eaf2fd;
+  border: 1.5px solid #0b63f6;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 26px;
+  min-height: 164px;
+  padding: 18px 16px;
+  text-align: center;
+  width: 100%;
+}
 
-    direction: rtl;
+.patient-avatar {
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #8dbbfb;
+  border-radius: 18px;
+  color: #115bd2;
+  display: flex;
+  height: 70px;
+  justify-content: center;
+  margin-bottom: 12px;
+  overflow: hidden;
+  padding: 8px;
+  width: 82px;
+}
 
-    padding: 20px 0;
+.patient-avatar img {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
 
-    background-color: #EAF0F9;
+.patient-profile-card strong {
+  font-size: 17px;
+  font-weight: 900;
+}
 
-    width: 250px;
-    height: 100vh;
+.patient-profile-card span {
+  color: #343434;
+  font-size: 15px;
+  margin-top: 4px;
+}
 
-    display: flex;
-    flex-direction: column;
+.sidebar-toggle {
+  display: none;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sidebar-link {
+  align-items: center;
+  border-radius: 8px;
+  color: #0a0a0a;
+  display: flex;
+  font-size: 16px;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 34px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+  background-color: #5a99ef;
+  box-shadow: inset 0 0 0 1px #0b63f6;
+}
+
+.sidebar-link:hover {
+  transform: translateY(-1px);
+}
+
+.logout-link {
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .patient-sidebar {
+    border-bottom: 1.5px solid #0b63f6;
+    border-left: 0;
+    padding: 18px;
+  }
+
+  .sidebar-header {
+    justify-content: space-between;
+  }
+
+  .patient-profile-card {
     align-items: center;
-
-    gap: 30px;
-}
-
-/* ========================= */
-/* Patient Info */
-/* ========================= */
-
-.patient-info {
-
-    border-radius: 30px;
-
-    padding: 10px;
-
-    width: 68%;
-    height: 156px;
-
-    border: #0654CB 1px solid;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    gap: 15px;
-}
-
-.patient-img {
-
-    border: 1px solid #707070;
-
-    border-radius: 14px;
-
-    width: 70px;
-    height: 57px;
-
-    overflow: hidden;
-
-    background-color: white;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.patient-img img {
-
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-}
-
-.patient-info h1 {
-
-    font-weight: 700;
-    font-size: 15px;
-
-    margin: 0;
-}
-
-.patient-info p {
-
-    font-size: 15px;
-    font-weight: 400;
-
-    margin: 0;
-}
-
-/* ========================= */
-/* Links */
-/* ========================= */
-
-.link {
-
-    text-decoration: none;
-
-    font-size: 15px;
-    font-weight: 700;
-
-    color: #1f2937;
-
-    width: 176px;
-    height: 44px;
-
-    border-radius: 12px;
-
-    display: flex;
-    align-items: center;
-
-    padding-right: 18px;
-
-    box-sizing: border-box;
-
-    transition: all 0.25s ease;
-}
-
-.link:hover {
-
-    background-color: #5C99F5;
-
-    color: white;
-
-    transform: translateX(-4px);
-}
-
-/* Active Route */
-
-.router-link-exact-active {
-
-    background-color: #0654CB;
-
-    color: white;
-}
-
-/* ========================= */
-/* Logout Button */
-/* ========================= */
-
-.logout-btn {
-
-    border: none;
-
-    background: transparent;
-
-    cursor: pointer;
-
-    text-align: right;
-}
-
-.logout-btn:hover {
-
-    background-color: #DC2626;
-}
-
-/* ========================= */
-/* Modal Overlay */
-/* ========================= */
-
-.modal-overlay {
-
-    position: fixed;
-
-    top: 0;
-    right: 0;
-    left: 0;
-    bottom: 0;
-
-    background-color: rgba(0, 0, 0, 0.45);
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    z-index: 999;
-}
-
-/* ========================= */
-/* Modal */
-/* ========================= */
-
-.logout-modal {
-
-    width: 420px;
-    max-width: 95%;
-
-    background-color: white;
-
-    border-radius: 24px;
-
-    padding: 30px;
-
-    text-align: center;
-
-    animation: modalAnimation 0.25s ease;
-}
-
-@keyframes modalAnimation {
-
-    from {
-
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-
-        opacity: 1;
-        transform: scale(1);
-    }
-
-}
-
-/* ========================= */
-/* Modal Content */
-/* ========================= */
-
-.modal-icon {
-
-    font-size: 50px;
-
-    margin-bottom: 15px;
-}
-
-.logout-modal h2 {
-
-    margin: 0 0 10px 0;
-
-    font-size: 28px;
-}
-
-.logout-modal p {
-
-    color: #6B7280;
-
-    font-size: 16px;
-
-    margin-bottom: 30px;
-}
-
-/* ========================= */
-/* Modal Buttons */
-/* ========================= */
-
-.modal-actions {
-
-    display: flex;
-
-    gap: 15px;
-}
-
-.cancel-btn,
-.confirm-btn {
-
     flex: 1;
+    flex-direction: row;
+    gap: 12px;
+    margin-bottom: 0;
+    min-height: 76px;
+    padding: 12px;
+    text-align: right;
+  }
 
-    height: 48px;
+  .patient-avatar {
+    height: 52px;
+    margin-bottom: 0;
+    width: 58px;
+  }
 
-    border: none;
-    border-radius: 14px;
+  .patient-profile-card span {
+    display: block;
+  }
 
-    font-size: 15px;
-    font-weight: 700;
-
+  .sidebar-toggle {
+    align-items: center;
+    background-color: #5a99ef;
+    border: 1px solid #0b63f6;
+    border-radius: 8px;
     cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 5px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+    width: 44px;
+  }
 
-    transition: 0.25s ease;
+  .sidebar-toggle span {
+    background-color: #ffffff;
+    border-radius: 999px;
+    display: block;
+    height: 2px;
+    width: 22px;
+  }
+
+  .sidebar-nav {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    margin-top: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, margin-top 0.25s ease, opacity 0.2s ease;
+  }
+
+  .sidebar-nav.is-open {
+    margin-top: 18px;
+    max-height: 720px;
+    opacity: 1;
+  }
 }
 
-/* Cancel */
-
-.cancel-btn {
-
-    background-color: #F3F4F6;
-
-    color: #111827;
+@media (max-width: 560px) {
+  .sidebar-nav {
+    grid-template-columns: 1fr;
+  }
 }
-
-.cancel-btn:hover {
-
-    background-color: #E5E7EB;
-}
-
-
-
-.confirm-btn {
-
-    background-color: #DC2626;
-
-    color: white;
-}
-
-.confirm-btn:hover {
-
-    background-color: #B91C1C;
-}
-
-/* ========================= */
-/* Responsive */
-/* ========================= */
-
-@media (max-width: 992px) {
-
-    .container-sideBarPatient {
-
-        width: 100%;
-        height: auto;
-
-        padding: 20px;
-    }
-
-}
-
-@media (max-width: 576px) {
-
-    .logout-modal {
-
-        padding: 22px;
-    }
-
-    .modal-actions {
-
-        flex-direction: column;
-    }
-
-}
-
 </style>

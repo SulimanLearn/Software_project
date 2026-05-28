@@ -1,524 +1,452 @@
 <template>
-    <div>
-        <NavBar />
-        <h1>My records</h1>
+  <PatientPortalLayout
+    title="السجل الطبي"
+    subtitle="عرض التشخيصات والتقارير والزيارات السابقة والوصفات المرتبطة."
+  >
+    <section class="patient-stats-grid" aria-label="ملخص السجل الطبي">
+      <article v-for="stat in medicalSummaryCards" :key="stat.label" class="patient-stat-card">
+        <div class="patient-stat-copy">
+          <strong>{{ stat.value }}</strong>
+          <span>{{ stat.label }}</span>
+        </div>
+        <component :is="stat.icon" class="patient-stat-icon" :size="26" :stroke-width="2" aria-hidden="true" />
+      </article>
+    </section>
+
+    <section class="patient-dashboard-card" aria-labelledby="diagnoses-title">
+      <div class="patient-section-header">
+        <h2 id="diagnoses-title">التشخيصات السابقة والتقارير الطبية</h2>
+        <span>{{ patientRecords.length }} تقارير</span>
+      </div>
+
+      <div class="patient-table-wrap">
+        <table class="patient-table">
+          <thead>
+            <tr>
+              <th>رقم التقرير</th>
+              <th>الطبيب</th>
+              <th>التخصص</th>
+              <th>التاريخ</th>
+              <th>ملخص التشخيص</th>
+              <th>الوصفات</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="record in patientRecords" :key="record.id">
+              <td data-label="رقم التقرير">{{ record.reportNumber }}</td>
+              <td data-label="الطبيب">{{ record.doctorName }}</td>
+              <td data-label="التخصص">{{ record.specialty }}</td>
+              <td data-label="التاريخ">{{ formatArabicDate(record.date) }}</td>
+              <td data-label="ملخص التشخيص">{{ record.summary }}</td>
+              <td data-label="الوصفات">{{ record.prescriptions.join('، ') }}</td>
+              <td data-label="الإجراءات">
+                <div class="patient-action-row">
+                  <PatientActionButton variant="soft" @click="selectedRecord = record">عرض التقرير</PatientActionButton>
+                  <PatientActionButton variant="outline" @click="printRecord(record)">طباعة التقرير</PatientActionButton>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="patient-grid-two">
+      <section class="patient-dashboard-card" aria-labelledby="visits-title">
+        <div class="patient-section-header">
+          <h2 id="visits-title">الزيارات السابقة</h2>
+          <span>آخر الزيارات</span>
+        </div>
+        <div class="patient-list">
+          <article v-for="record in patientRecords" :key="`visit-${record.id}`" class="patient-list-item">
+            <strong>{{ record.doctorName }} - {{ record.specialty }}</strong>
+            <p>{{ formatArabicDate(record.date) }} - {{ record.diagnosis }}</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="patient-dashboard-card" aria-labelledby="linked-prescriptions-title">
+        <div class="patient-section-header">
+          <h2 id="linked-prescriptions-title">الوصفات المرتبطة</h2>
+          <NuxtLink class="patient-outline-button" to="/patient/prescriptions">عرض الوصفات</NuxtLink>
+        </div>
+        <div class="patient-list">
+          <article v-for="prescription in patientPrescriptions" :key="prescription.id" class="patient-list-item">
+            <strong>{{ prescription.number }} - {{ prescription.doctorName }}</strong>
+            <p>{{ prescription.diagnosis }} - {{ prescription.medicationsCount }} أدوية</p>
+            <PatientStatusBadge :status="prescription.status" />
+          </article>
+        </div>
+      </section>
     </div>
+
+    <PatientModal
+      v-if="selectedRecord"
+      :title="selectedDoctorReport.title"
+      subtitle="مراجعة التقرير الطبي"
+      size="lg"
+      @close="selectedRecord = null"
+    >
+      <DoctorReportDetails :report="selectedDoctorReport" :patient="patientReportOwner" />
+      <template #actions>
+        <button class="patient-save-button" type="button" @click="printRecord(selectedRecord)">طباعة التقرير</button>
+        <button class="patient-cancel-button" type="button" @click="selectedRecord = null">إغلاق</button>
+      </template>
+    </PatientModal>
+
+    <DoctorReportPrintZone
+      :print-item="doctorReportPrintItem"
+      :patient="patientReportOwner"
+      :prescriptions="printPrescriptions"
+      :medical-history="printMedicalHistory"
+      :print-date="doctorReportPrintDate"
+    />
+  </PatientPortalLayout>
 </template>
 
 <script setup>
+import {
+  formatArabicDate,
+  medicalSummaryCards,
+  patientAppointments,
+  patientPrescriptions,
+  patientProfile,
+  patientRecords
+} from '~/data/patientPortal'
 
-import { ref } from "vue"
+const selectedRecord = ref(null)
+const { doctorReportPrintDate, doctorReportPrintItem, printDoctorReport } = useDoctorReportPrint()
 
-const showPrintModal = ref(false)
+const calculateAge = (dateOfBirth) => {
+  const birthDate = new Date(`${dateOfBirth}T00:00:00`)
 
-const selectedRecord = ref({})
+  if (Number.isNaN(birthDate.getTime())) {
+    return 'غير متوفر'
+  }
 
-const records = ref([
-    {
-        id: 1,
-        doctor: "د.محمد ابو حليمة",
-        specialty: "امراض القلب",
-        date: "04 / 04 / 2026",
-        diagnosis: "ارتفاع ضغط الدم"
-    },
-    {
-        id: 2,
-        doctor: "د.محمد ابو حليمة",
-        specialty: "العظام",
-        date: "11 / 04 / 2026",
-        diagnosis: "التهاب المفاصل"
-    },
-    {
-        id: 3,
-        doctor: "د.محمد ابو حليمة",
-        specialty: "الجلدية",
-        date: "18 / 04 / 2026",
-        diagnosis: "حساسية جلدية"
-    }
-])
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const hasBirthdayPassed = today.getMonth() > birthDate.getMonth()
+    || (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())
 
-const openPrintModal = (record) => {
-    selectedRecord.value = record
-    showPrintModal.value = true
+  if (!hasBirthdayPassed) {
+    age -= 1
+  }
+
+  return age
 }
 
-const closePrintModal = () => {
-    showPrintModal.value = false
+const latestCompletedVisit = computed(() => patientAppointments
+  .filter(appointment => appointment.category === 'completed')
+  .sort((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())[0])
+
+const patientReportOwner = {
+  id: 'P-2056',
+  fileNumber: 'P-2056',
+  fullName: patientProfile.name,
+  name: patientProfile.name,
+  age: calculateAge(patientProfile.dateOfBirth),
+  gender: 'ذكر',
+  phone: patientProfile.phone,
+  email: patientProfile.email,
+  lastVisit: latestCompletedVisit.value ? formatArabicDate(latestCompletedVisit.value.date) : formatArabicDate(patientRecords[0]?.date || ''),
+  visitCount: medicalSummaryCards.find(card => card.label === 'الزيارات السابقة')?.value || patientRecords.length,
+  followUpStatus: 'بحاجة متابعة',
+  latestDiagnosis: patientRecords[0]?.diagnosis || 'غير متوفر'
 }
 
-const downloadPDF = () => {
+const printPrescriptions = computed(() => patientPrescriptions
+  .filter(prescription => prescription.status === 'فعالة')
+  .map(prescription => ({
+    ...prescription,
+    date: formatArabicDate(prescription.date)
+  })))
 
-    const reportContent = `
-        <html dir="rtl">
-        <head>
-            <title>التقرير الطبي</title>
+const printMedicalHistory = computed(() => patientRecords.map(record => (
+  `${record.diagnosis} - ${formatArabicDate(record.date)}`
+)))
 
-            <style>
+const reportForDoctorTemplate = (record) => ({
+  id: record.id,
+  reportNumber: record.reportNumber,
+  title: `التقرير الطبي ${record.reportNumber}`,
+  type: 'تقرير طبي',
+  doctor: record.doctorName,
+  specialty: record.specialty,
+  date: formatArabicDate(record.date),
+  diagnosis: record.diagnosis,
+  summary: record.summary,
+  content: record.recommendations,
+  prescriptions: record.prescriptions,
+  fileName: record.fileName || '',
+  externalUrl: record.externalUrl || ''
+})
 
-                body {
-                    font-family: Arial;
-                    padding: 40px;
-                    direction: rtl;
-                }
+const selectedDoctorReport = computed(() => (
+  selectedRecord.value ? reportForDoctorTemplate(selectedRecord.value) : {}
+))
 
-                h1 {
-                    color: #0654CB;
-                    margin-bottom: 30px;
-                }
-
-                p {
-                    font-size: 18px;
-                    margin-bottom: 15px;
-                }
-
-            </style>
-
-        </head>
-
-        <body>
-
-            <h1>التقرير الطبي</h1>
-
-            <p>
-                <strong>الطبيب:</strong>
-                ${selectedRecord.value.doctor}
-            </p>
-
-            <p>
-                <strong>التخصص:</strong>
-                ${selectedRecord.value.specialty}
-            </p>
-
-            <p>
-                <strong>التاريخ:</strong>
-                ${selectedRecord.value.date}
-            </p>
-
-            <p>
-                <strong>التشخيص:</strong>
-                ${selectedRecord.value.diagnosis}
-            </p>
-
-            <br>
-
-            <p>
-                تم إجراء الفحص الطبي للمريض
-                وتوثيق الحالة الصحية الحالية
-                والتوصيات الطبية اللازمة.
-            </p>
-
-        </body>
-
-        </html>
-    `
-
-    const newWindow = window.open("", "_blank")
-
-    newWindow.document.write(reportContent)
-
-    newWindow.document.close()
-
-    newWindow.focus()
-
-    newWindow.print()
-
+const printRecord = (record) => {
+  printDoctorReport(reportForDoctorTemplate(record))
 }
-
 </script>
 
-<style scoped>
-
-.parent-page {
-    position: relative;
+<style>
+.print-area {
+  inset-block-start: 0;
+  inset-inline-start: -100vw;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  visibility: hidden;
+  width: 210mm;
+  z-index: -1;
 }
 
-/* ========================= */
-/* Sidebar */
-/* ========================= */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
 
-.side-bar {
-    position: fixed;
-    right: 0;
-    top: 85px;
-    height: 100vh;
-}
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    width: 100% !important;
+  }
 
-/* ========================= */
-/* Main Container */
-/* ========================= */
+  body * {
+    visibility: hidden !important;
+  }
 
-.patient-container {
-    margin-right: 252px;
-    padding: 30px;
-}
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
 
-.wrapper-container {
-    max-width: 1206px;
+  .site-footer,
+  footer,
+  .navbar,
+  nav,
+  aside,
+  button,
+  .modal-overlay,
+  .toast-message {
+    display: none !important;
+  }
 
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-}
+  .print-area {
+    inset: auto !important;
+    inset-block-start: auto !important;
+    inset-inline-start: auto !important;
+    left: 0 !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+    position: absolute !important;
+    top: 0 !important;
+    z-index: 9999 !important;
+  }
 
-/* ========================= */
-/* Header */
-/* ========================= */
-
-.info h1 {
-    font-size: 32px;
-    font-weight: 700;
-
-    margin-bottom: 8px;
-}
-
-.info p {
-    font-size: 18px;
-    color: #6B7280;
-
-    margin: 0;
-}
-
-/* ========================= */
-/* Medical Records */
-/* ========================= */
-
-.medical-records {
-    width: 100%;
-
-    background-color: #F9FBFF;
-
-    border: 1px solid #0654CB;
-    border-radius: 24px;
-
-    padding: 25px;
-
+  .print-zone {
+    background: #ffffff !important;
     box-sizing: border-box;
-}
+    color: #101010;
+    direction: rtl;
+    display: block !important;
+    font-family: Arial, Tahoma, sans-serif;
+    font-size: 11.2pt;
+    line-height: 1.5;
+    margin: 0 !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
 
-/* ========================= */
-/* Header Row */
-/* ========================= */
+  .print-zone *,
+  .print-zone *::before,
+  .print-zone *::after {
+    box-sizing: border-box;
+  }
 
-.records-header {
-    display: grid;
-
-    grid-template-columns:
-        1.3fr
-        1fr
-        1fr
-        1.5fr
-        1fr;
-
+  .print-header {
     align-items: center;
-
-    padding: 0 15px 20px 15px;
-
-    border-bottom: 1px solid #B7CDF8;
-
-    font-weight: 700;
-    color: #374151;
-}
-
-/* ========================= */
-/* Record Card */
-/* ========================= */
-
-.record-card {
-    display: grid;
-
-    grid-template-columns:
-        1.3fr
-        1fr
-        1fr
-        1.5fr
-        1fr;
-
-    align-items: center;
-
-    padding: 22px 15px;
-
-    border-bottom: 1px solid #D6E4FF;
-
-    transition: 0.25s ease;
-}
-
-.record-card:last-child {
-    border-bottom: none;
-}
-
-.record-card:hover {
-    background-color: #EEF4FF;
-    border-radius: 14px;
-}
-
-/* ========================= */
-/* Text */
-/* ========================= */
-
-.record-card p {
-    margin: 0;
-
-    font-size: 16px;
-    color: #111827;
-}
-
-/* ========================= */
-/* Print Button */
-/* ========================= */
-
-.print-btn {
-    width: 95px;
-    height: 40px;
-
-    background-color: #5C99F5;
-    color: white;
-
-    border: none;
-    border-radius: 12px;
-
-    font-size: 14px;
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition: 0.25s ease;
-}
-
-.print-btn:hover {
-    background-color: #3B82F6;
-}
-
-.print-btn:active {
-    transform: scale(0.97);
-}
-
-/* ========================= */
-/* Modal */
-/* ========================= */
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-
-    background-color: rgba(0, 0, 0, 0.45);
-
+    background: linear-gradient(135deg, #eef6ff 0%, #ffffff 68%);
+    border: 1.3pt solid #9bc3ff;
+    border-radius: 5mm;
+    break-inside: avoid;
     display: flex;
-    justify-content: center;
-    align-items: center;
-
-    z-index: 9999;
-
-    padding: 20px;
-}
-
-.print-modal {
-    width: 100%;
-    max-width: 650px;
-
-    background-color: white;
-
-    border-radius: 24px;
-
-    overflow: hidden;
-
-    animation: popup 0.25s ease;
-}
-
-@keyframes popup {
-
-    from {
-        transform: scale(0.9);
-        opacity: 0;
-    }
-
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-
-}
-
-/* ========================= */
-/* Modal Header */
-/* ========================= */
-
-.modal-header {
-    padding: 20px 25px;
-
-    border-bottom: 1px solid #E5E7EB;
-
-    display: flex;
+    gap: 8mm;
     justify-content: space-between;
+    margin-bottom: 4mm;
+    page-break-inside: avoid;
+    padding: 4mm 5mm;
+  }
+
+  .print-brand {
     align-items: center;
-}
-
-.modal-header h2 {
-    margin: 0;
-}
-
-.close-btn {
-    background: transparent;
-    border: none;
-
-    font-size: 22px;
-
-    cursor: pointer;
-}
-
-/* ========================= */
-/* Modal Body */
-/* ========================= */
-
-.modal-body {
-    padding: 25px;
-}
-
-.report-preview {
-    border: 1px solid #D6E4FF;
-
-    border-radius: 18px;
-
-    padding: 25px;
-
-    background-color: #F9FBFF;
-}
-
-.report-preview h1 {
-    margin-top: 0;
-
-    color: #0654CB;
-}
-
-.report-info p {
-    margin-bottom: 14px;
-
-    font-size: 17px;
-}
-
-.report-text {
-    margin-top: 25px;
-
-    line-height: 1.8;
-}
-
-/* ========================= */
-/* Modal Footer */
-/* ========================= */
-
-.modal-footer {
-    padding: 20px 25px;
-
-    border-top: 1px solid #E5E7EB;
-
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-}
+    flex: 1;
+    gap: 4mm;
+    min-width: 0;
+  }
 
-.cancel-btn {
-    background-color: #F3F4F6;
+  .print-logo {
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    border-radius: 4mm;
+    flex: 0 0 auto;
+    height: 18mm;
+    object-fit: contain;
+    padding: 2mm;
+    width: 18mm;
+  }
+
+  .print-brand h1 {
+    color: #0b63f6;
+    font-size: 22pt;
+    font-weight: 900;
+    letter-spacing: 0;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .print-brand p {
+    color: #172033;
+    font-size: 14pt;
+    font-weight: 800;
+    margin: 1.5mm 0 0;
+  }
+
+  .print-header-details {
+    display: grid;
+    gap: 1.7mm;
+    min-width: 55mm;
+  }
+
+  .print-header-details p {
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    border-radius: 3mm;
+    display: flex;
+    gap: 4mm;
+    justify-content: space-between;
+    margin: 0;
+    padding: 2.2mm 3mm;
+  }
+
+  .print-header-details span,
+  .print-grid span {
+    color: #475569;
+    display: block;
+    font-size: 9.6pt;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .print-header-details strong,
+  .print-grid strong {
     color: #111827;
+    display: block;
+    font-size: 11.2pt;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-top: 1mm;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 
-    border: none;
+  .print-card,
+  .print-section {
+    background: #ffffff !important;
+    border: 1px solid #bfdbfe;
+    border-radius: 4mm;
+    break-inside: avoid;
+    margin-bottom: 3mm;
+    page-break-inside: avoid;
+    padding: 3.5mm;
+  }
 
-    padding: 12px 18px;
+  .print-card h2,
+  .print-section h2 {
+    background: #eaf3ff;
+    border: 1px solid #d7e8ff;
+    border-radius: 3mm;
+    color: #0b63f6;
+    font-size: 13pt;
+    font-weight: 900;
+    margin: 0 0 3mm;
+    padding: 2mm 3mm;
+  }
 
-    border-radius: 12px;
+  .print-grid {
+    display: grid;
+    gap: 2mm 3mm;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-    cursor: pointer;
+  .print-grid p {
+    background: #ffffff;
+    border: 1px solid #e0edff;
+    border-radius: 3mm;
+    margin: 0;
+    min-height: 11mm;
+    overflow-wrap: anywhere;
+    padding: 2mm 3mm;
+    word-break: break-word;
+  }
+
+  .print-section ul {
+    display: grid;
+    gap: 2mm;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-section li,
+  .print-empty,
+  .print-notes {
+    color: #111827;
+    font-size: 10.8pt;
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .print-section li {
+    background: #ffffff;
+    border: 1px solid #e0edff;
+    border-radius: 3mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 2.2mm 3mm;
+  }
+
+  .print-prescriptions-list li {
+    align-items: start;
+    display: grid;
+    gap: 2mm 4mm;
+    grid-template-columns: 32mm 28mm minmax(0, 1fr);
+  }
+
+  .print-prescriptions-list strong {
+    font-weight: 900;
+  }
+
+  .print-empty,
+  .print-notes {
+    background: #ffffff;
+    border: 1px solid #e0edff;
+    border-radius: 3mm;
+    line-height: 1.65;
+    padding: 2.5mm 3mm;
+  }
 }
-
-.download-btn {
-    background-color: #0654CB;
-    color: white;
-
-    border: none;
-
-    padding: 12px 18px;
-
-    border-radius: 12px;
-
-    cursor: pointer;
-}
-
-/* ========================= */
-/* Responsive */
-/* ========================= */
-
-@media (max-width: 992px) {
-
-    .side-bar {
-        position: relative;
-        width: 100%;
-        height: auto;
-    }
-
-    .patient-container {
-        margin-right: 0;
-        padding: 20px;
-    }
-
-    .records-header {
-        display: none;
-    }
-
-    .record-card {
-        grid-template-columns: 1fr;
-
-        gap: 12px;
-
-        background-color: #F9FBFF;
-
-        border-radius: 16px;
-
-        margin-bottom: 15px;
-    }
-
-    .print-btn {
-        width: 100%;
-    }
-
-}
-
-@media (max-width: 768px) {
-
-    .wrapper-container {
-        gap: 18px;
-    }
-
-    .info h1 {
-        font-size: 26px;
-    }
-
-    .info p {
-        font-size: 16px;
-    }
-
-    .medical-records {
-        padding: 18px;
-    }
-
-}
-
-@media (max-width: 576px) {
-
-    .patient-container {
-        padding: 15px;
-    }
-
-    .print-modal {
-        border-radius: 18px;
-    }
-
-    .modal-footer {
-        flex-direction: column;
-    }
-
-    .download-btn,
-    .cancel-btn {
-        width: 100%;
-    }
-
-}
-
 </style>
