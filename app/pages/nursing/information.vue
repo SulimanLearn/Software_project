@@ -200,7 +200,7 @@ const selectedServices = computed(() => {
   return bookingState.value?.service ? [bookingState.value.service] : []
 })
 
-if (!selectedNurse.value || !selectedServices.value.length || selectedServices.value.length > 3) {
+if (!selectedNurse.value || !selectedServices.value.length) {
   await navigateTo('/nursing/select-nurse')
 }
 

@@ -16,12 +16,6 @@
           <p>اختر الخدمة التي تناسب احتياجاتك للحصول على أفضل رعاية</p>
         </header>
 
-        <Transition name="toast">
-          <div v-if="toastMessage" class="limit-toast" role="status" aria-live="polite">
-            {{ toastMessage }}
-          </div>
-        </Transition>
-
         <nav class="booking-stepper" aria-label="خطوات حجز خدمة التمريض">
           <div
             v-for="step in steps"
@@ -216,14 +210,9 @@ const services = [
   },
 ]
 
-const maxSelectedServices = 3
-const limitMessage = 'لا يمكن اختيار أكثر من 3 خدمات من الممرض الواحد'
-const toastMessage = ref('')
-let toastTimer = null
-
 const getInitialSelectedServices = () => {
   if (Array.isArray(bookingState.value?.services) && bookingState.value.services.length) {
-    return bookingState.value.services.slice(0, maxSelectedServices)
+    return bookingState.value.services
   }
 
   return bookingState.value?.service ? [bookingState.value.service] : []
@@ -242,30 +231,13 @@ const formatServicePrice = (price) => (
 
 const toBookingService = ({ icon, ...service }) => service
 
-const showLimitToast = () => {
-  toastMessage.value = limitMessage
-
-  if (toastTimer && import.meta.client) {
-    window.clearTimeout(toastTimer)
-  }
-
-  if (import.meta.client) {
-    toastTimer = window.setTimeout(() => {
-      toastMessage.value = ''
-    }, 2800)
-  }
-}
-
 const isSelectedService = (serviceId) => selectedServiceIds.value.includes(serviceId)
 
 const selectService = (service) => {
   if (isSelectedService(service.id)) {
     selectedServices.value = selectedServices.value.filter((item) => item.id !== service.id)
-  } else if (selectedServices.value.length < maxSelectedServices) {
-    selectedServices.value = [...selectedServices.value, service]
   } else {
-    showLimitToast()
-    return
+    selectedServices.value = [...selectedServices.value, service]
   }
 
   const bookingServices = selectedServices.value.map(toBookingService)
@@ -289,7 +261,7 @@ const goBack = async () => {
 }
 
 const goNext = async () => {
-  if (!selectedServices.value.length || selectedServices.value.length > maxSelectedServices) {
+  if (!selectedServices.value.length) {
     return
   }
 
@@ -370,37 +342,6 @@ const handleImageError = (event) => {
   font-size: clamp(0.9rem, 1.7vw, 1.02rem);
   font-weight: 600;
   line-height: 1.8;
-}
-
-.limit-toast {
-  --nursing-navbar-height: 85px;
-  --nursing-toast-gap: 20px;
-  position: fixed;
-  top: calc(var(--nursing-navbar-height) + var(--nursing-toast-gap));
-  right: 20px;
-  z-index: 5000;
-  max-width: min(360px, calc(100vw - 32px));
-  padding: 14px 18px;
-  color: #0a2a67;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid #bdd8ff;
-  border-right: 4px solid #1d64f2;
-  border-radius: 12px;
-  box-shadow: 0 18px 42px rgba(15, 31, 61, 0.16);
-  font-size: 0.94rem;
-  font-weight: 900;
-  line-height: 1.6;
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
 }
 
 .booking-stepper {
@@ -782,11 +723,6 @@ const handleImageError = (event) => {
 }
 
 @media (max-width: 720px) {
-  .limit-toast {
-    --nursing-toast-gap: 16px;
-    right: 16px;
-  }
-
   .page-hero {
     margin-bottom: 24px;
   }

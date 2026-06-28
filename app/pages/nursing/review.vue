@@ -118,7 +118,6 @@ const paymentMethod = computed(() => booking.value.paymentMethod || booking.valu
 const hasRequiredBooking = computed(() => Boolean(
   nurse.value
     && services.value.length
-    && services.value.length <= 3
     && patientInfo.value
     && location.value
     && paymentMethod.value,
