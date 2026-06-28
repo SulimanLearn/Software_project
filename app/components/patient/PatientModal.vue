@@ -1,35 +1,28 @@
 <template>
-  <div class="patient-modal-overlay" dir="rtl" @click.self="$emit('close')">
-    <section
-      class="patient-modal"
-      :class="`patient-modal-${size}`"
-      role="dialog"
-      aria-modal="true"
-      :aria-labelledby="titleId"
-    >
-      <div class="patient-modal-header">
-        <div>
-          <h2 :id="titleId">{{ title }}</h2>
-          <p v-if="subtitle">{{ subtitle }}</p>
-        </div>
-        <button class="patient-close-button" type="button" aria-label="إغلاق" @click="$emit('close')">
-          ×
-        </button>
-      </div>
+  <BaseModal
+    :title="title"
+    :subtitle="subtitle"
+    :size="size"
+    id-prefix="patient-modal"
+    overlay-class="patient-modal-overlay"
+    surface-class="patient-modal"
+    header-class="patient-modal-header"
+    actions-class="patient-modal-actions"
+    close-button-class="patient-close-button"
+    @close="$emit('close')"
+  >
+    <slot />
 
-      <slot />
-
-      <div v-if="$slots.actions" class="patient-modal-actions">
-        <slot name="actions" />
-      </div>
-    </section>
-  </div>
+    <template v-if="$slots.actions" #actions>
+      <slot name="actions" />
+    </template>
+  </BaseModal>
 </template>
 
 <script setup>
 defineEmits(['close'])
 
-const props = defineProps({
+defineProps({
   title: {
     type: String,
     required: true
@@ -43,6 +36,4 @@ const props = defineProps({
     default: 'md'
   }
 })
-
-const titleId = computed(() => `patient-modal-${props.title.replace(/\s+/g, '-')}`)
 </script>

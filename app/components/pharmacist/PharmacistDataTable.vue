@@ -1,7 +1,5 @@
 <template>
-  <div class="pharmacist-table-wrap">
-    <table class="pharmacist-table">
-      <slot />
-    </table>
-  </div>
+  <BaseDataTable wrap-class="pharmacist-table-wrap" table-class="pharmacist-table">
+    <slot />
+  </BaseDataTable>
 </template>

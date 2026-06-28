@@ -1,19 +1,16 @@
 <template>
-  <component
-    :is="to ? NuxtLink : 'button'"
+  <BaseButton
     :to="to || undefined"
-    class="patient-action-button"
-    :class="variant"
+    base-class="patient-action-button"
+    :variant="variant"
     :type="to ? undefined : type"
     :disabled="disabled"
   >
     <slot />
-  </component>
+  </BaseButton>
 </template>
 
 <script setup>
-const NuxtLink = resolveComponent('NuxtLink')
-
 defineProps({
   to: {
     type: String,
