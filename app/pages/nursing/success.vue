@@ -115,6 +115,7 @@ const defaultNurseRole = 'ممرض'
 const hasBooking = computed(() => Boolean(
   booking.value.nurse
     || booking.value.service
+    || booking.value.services
     || booking.value.confirmation
     || booking.value.orderNumber,
 ))
@@ -205,12 +206,29 @@ const nurseRole = computed(() =>
   )
 )
 
+const services = computed(() => {
+  if (Array.isArray(booking.value.services) && booking.value.services.length) {
+    return booking.value.services
+  }
+
+  if (Array.isArray(booking.value.confirmation?.services) && booking.value.confirmation.services.length) {
+    return booking.value.confirmation.services
+  }
+
+  const fallbackService = booking.value.service || booking.value.confirmation?.service
+  return fallbackService ? [fallbackService] : []
+})
+
 const serviceName = computed(() =>
-  displayValue(booking.value.service?.title || booking.value.confirmation?.service?.title),
+  displayValue(services.value.map((item) => item?.title || item?.name).filter(Boolean).join('، ')),
 )
 
 const servicePrice = computed(() => {
-  const price = booking.value.service?.price ?? booking.value.confirmation?.totalPrice
+  const savedTotal = booking.value.confirmation?.totalPrice
+  const total = services.value.reduce((sum, item) => (
+    sum + (typeof item?.price === 'number' ? item.price : 0)
+  ), 0)
+  const price = total || savedTotal
 
   if (price === null || price === undefined || price === '') {
     return 'غير محدد'
@@ -268,7 +286,7 @@ const appointmentTime = computed(() =>
 const detailItems = computed(() => [
   { label: 'السعر', value: servicePrice.value, icon: Tag },
   { label: 'الوقت', value: appointmentTime.value, icon: Clock },
-  { label: 'نوع الخدمة', value: serviceName.value, icon: Stethoscope },
+  { label: 'الخدمات', value: serviceName.value, icon: Stethoscope },
   { label: 'الموقع', value: fullAddress.value, icon: MapPin },
   { label: 'طريقة الدفع', value: paymentMethodLabels[paymentMethod.value] || displayValue(paymentMethod.value), icon: CreditCard },
   { label: 'رقم الطلب', value: orderNumber.value, icon: Hash, accent: true },
@@ -299,7 +317,7 @@ const downloadDetails = () => {
   const summaryItems = [
     { label: 'رقم الطلب', value: orderNumber.value },
     { label: 'اسم الممرض', value: nurseName.value },
-    { label: 'نوع الخدمة', value: serviceName.value },
+    { label: 'الخدمات', value: serviceName.value },
     { label: 'السعر', value: servicePrice.value },
     { label: 'الوقت', value: appointmentTime.value },
     { label: 'الموقع', value: fullAddress.value },

@@ -103,14 +103,22 @@ const steps = [
 
 const booking = computed(() => bookingState.value || {})
 const nurse = computed(() => booking.value.nurse || null)
-const service = computed(() => booking.value.service || null)
+const services = computed(() => {
+  if (Array.isArray(booking.value.services)) {
+    return booking.value.services
+  }
+
+  return booking.value.service ? [booking.value.service] : []
+})
+const service = computed(() => services.value[0] || null)
 const patientInfo = computed(() => booking.value.patientInfo || null)
 const location = computed(() => booking.value.location || booking.value.serviceLocation || null)
 const paymentMethod = computed(() => booking.value.paymentMethod || booking.value.payment?.method || '')
 
 const hasRequiredBooking = computed(() => Boolean(
   nurse.value
-    && service.value
+    && services.value.length
+    && services.value.length <= 3
     && patientInfo.value
     && location.value
     && paymentMethod.value,
@@ -177,14 +185,26 @@ const fullAddress = computed(() => {
 })
 
 const totalPrice = computed(() => {
-  const price = service.value?.price
+  const numericTotal = services.value.reduce((total, item) => (
+    total + (typeof item?.price === 'number' ? item.price : 0)
+  ), 0)
 
-  if (price === null || price === undefined || price === '') {
+  if (!numericTotal) {
     return 'غير محدد'
   }
 
-  return `${price} شيكل`
+  return `${numericTotal} شيكل`
 })
+
+const selectedServiceNames = computed(() =>
+  services.value.map((item) => item?.title || item?.name).filter(Boolean).join('، '),
+)
+
+const selectedServicesTotal = computed(() =>
+  services.value.reduce((total, item) => (
+    total + (typeof item?.price === 'number' ? item.price : 0)
+  ), 0),
+)
 
 const paymentMethodLabel = computed(() =>
   paymentMethodLabels[paymentMethod.value] || displayValue(paymentMethod.value),
@@ -192,7 +212,7 @@ const paymentMethodLabel = computed(() =>
 
 const summaryRows = computed(() => [
   { label: 'الممرض', value: displayValue(nurse.value?.name), icon: UserRound },
-  { label: 'الخدمة', value: displayValue(service.value?.title), icon: Stethoscope },
+  { label: 'الخدمات', value: displayValue(selectedServiceNames.value), icon: Stethoscope },
   { label: 'الوقت', value: displayValue(selectedTime.value), icon: Clock },
   { label: 'الموقع', value: fullAddress.value, icon: MapPin },
   { label: 'السعر الإجمالي', value: totalPrice.value, icon: Tag },
@@ -236,12 +256,13 @@ const confirmOrder = async () => {
       nurse: nurse.value,
       nurseRole: nurse.value?.role || nurse.value?.jobTitle || defaultNurseRole,
       service: service.value,
+      services: services.value,
       patientInfo: patientInfo.value,
       location: location.value,
       paymentMethod: paymentMethod.value,
       date: selectedDate.value,
       time: selectedTime.value,
-      totalPrice: service.value?.price,
+      totalPrice: selectedServicesTotal.value,
     },
   }
 

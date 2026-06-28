@@ -169,7 +169,7 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import {
   ArrowLeft,
   ArrowRight,
@@ -192,16 +192,24 @@ const steps = [
 
 const bookingState = useState('nursingBooking', () => ({}))
 const selectedNurse = computed(() => bookingState.value?.nurse || null)
-const selectedService = computed(() => bookingState.value?.service || null)
+const selectedServices = computed(() => {
+  if (Array.isArray(bookingState.value?.services)) {
+    return bookingState.value.services
+  }
 
-if (!selectedNurse.value || !selectedService.value) {
+  return bookingState.value?.service ? [bookingState.value.service] : []
+})
+
+if (!selectedNurse.value || !selectedServices.value.length || selectedServices.value.length > 3) {
   await navigateTo('/nursing/select-nurse')
 }
 
 const existingInfo = bookingState.value?.patientInfo || {}
 const phonePlaceholder = '05xxxxxxxx'
 
-const timeOptions = [
+const morningTimeOptions = [
+  '06:00',
+  '07:00',
   '08:00',
   '09:00',
   '10:00',
@@ -209,6 +217,9 @@ const timeOptions = [
   '12:00',
   '13:00',
   '14:00',
+]
+
+const eveningTimeOptions = [
   '15:00',
   '16:00',
   '17:00',
@@ -216,7 +227,29 @@ const timeOptions = [
   '19:00',
   '20:00',
   '21:00',
+  '22:00',
+  '23:00',
 ]
+
+const nurseWorkingPeriod = computed(() => {
+  const value = String(
+    selectedNurse.value?.availabilityStatus || selectedNurse.value?.shift || '',
+  ).trim().toLowerCase()
+
+  if (['morning', 'صباحي', 'صباحية'].includes(value)) {
+    return 'morning'
+  }
+
+  if (['evening', 'night', 'مسائي', 'مسائية', 'ليلية'].includes(value)) {
+    return 'evening'
+  }
+
+  return ''
+})
+
+const timeOptions = computed(() =>
+  nurseWorkingPeriod.value === 'evening' ? eveningTimeOptions : morningTimeOptions,
+)
 
 const form = reactive({
   fullName: existingInfo.fullName || '',
@@ -228,6 +261,16 @@ const form = reactive({
   allergyDetails: existingInfo.allergyDetails || '',
   attachmentName: existingInfo.attachmentName || '',
 })
+
+watch(
+  timeOptions,
+  (options) => {
+    if (form.preferredTime && !options.includes(form.preferredTime)) {
+      form.preferredTime = ''
+    }
+  },
+  { immediate: true },
+)
 
 const errors = reactive({
   fullName: '',
@@ -260,7 +303,7 @@ const validateForm = () => {
     errors.gender = 'يرجى اختيار الجنس'
   }
 
-  if (!form.preferredTime) {
+  if (!form.preferredTime || !timeOptions.value.includes(form.preferredTime)) {
     errors.preferredTime = 'يرجى اختيار وقت الزيارة'
   }
 
