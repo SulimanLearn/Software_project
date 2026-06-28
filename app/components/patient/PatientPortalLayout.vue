@@ -1,6 +1,5 @@
 <template>
   <div class="patient-portal-page" dir="rtl">
-    <NavBar />
 
     <div class="patient-portal-shell">
       <SideBarPatient :patient="patient" @logout="showLogoutModal = true" />

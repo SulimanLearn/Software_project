@@ -1,6 +1,5 @@
 <template>
   <div class="doctor-appointments-page" dir="rtl">
-    <NavBar />
 
     <div class="doctor-appointments-shell">
       <DoctorSidebar :doctor="doctor" @logout="showLogoutModal = true" />

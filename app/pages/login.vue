@@ -53,6 +53,7 @@
                 </form> <!-- .end form -->
             </div> <!-- .end box-login -->
         </div> <!-- .end container -->
+        <Footer />
     </div>
 </template>
 
