@@ -1,6 +1,5 @@
 <template>
   <div class="nurse-settings-page" dir="rtl">
-    <NavBar />
 
     <div class="nurse-settings-shell">
       <NurseSidebar :nurse="nurse" @logout="showLogoutModal = true" />

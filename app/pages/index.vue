@@ -239,6 +239,7 @@
             <span aria-hidden="true"></span>
         </button>
         <div class="elfsight-app-580f9bf9-bdf0-4014-9b43-ae7fec84c765" data-elfsight-app-lazy></div>
+        <Footer />
     </div>
 </template>
 

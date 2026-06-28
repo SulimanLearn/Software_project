@@ -39,19 +39,6 @@
         </div>
       </article>
     </section>
-
-    <nav class="pagination" :aria-label="paginationLabel">
-      <button
-        v-for="button in paginationButtons"
-        :key="button.label"
-        class="pagination-button"
-        :class="{ active: button.active, ellipsis: button.type === 'ellipsis' }"
-        type="button"
-        :disabled="button.disabled"
-      >
-        {{ button.label }}
-      </button>
-    </nav>
   </main>
 </template>
 
@@ -67,27 +54,15 @@ const articles = useArticles()
 const pageTitle = 'أحدث أخبارنا ومدونتنا'
 const pageSubtitle = 'نشارك معكم نصائح طبية موثوقة وأخبار صحية من فريقنا الطبي المتخصص'
 const articlesSectionLabel = 'المقالات المنشورة'
-const paginationLabel = 'ترقيم صفحات المقالات'
 const metaSeparator = '•'
 
 const buttonLabels = {
   readMore: 'اقرأ المزيد',
-  previous: 'السابق',
-  next: 'التالي'
 }
 
 const publishedArticles = computed(() => {
   return articles.value.filter(article => article.status === 'published')
 })
-
-const paginationButtons = [
-  { label: buttonLabels.next, type: 'next', active: false, disabled: false },
-  { label: '...', type: 'ellipsis', active: false, disabled: true },
-  { label: '3', type: 'page', active: false, disabled: false },
-  { label: '2', type: 'page', active: false, disabled: false },
-  { label: '1', type: 'page', active: true, disabled: false },
-  { label: buttonLabels.previous, type: 'previous', active: false, disabled: false }
-]
 
 const goToArticle = async (article) => {
   await navigateTo(`/blog/${article.slug}`)
@@ -251,55 +226,6 @@ const goToArticle = async (article) => {
   transform: translateY(-2px);
 }
 
-.pagination {
-  align-items: center;
-  direction: ltr;
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  margin-top: 16px;
-}
-
-.pagination-button {
-  background: #ffffff;
-  border: 1px solid #e8f1ff;
-  border-radius: 13px;
-  box-shadow: 0 8px 22px #2667ae17;
-  color: #15315f;
-  cursor: pointer;
-  direction: rtl;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 900;
-  min-height: 39px;
-  min-width: 45px;
-  padding: 0 16px;
-  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease, transform 0.25s ease;
-}
-
-.pagination-button.active {
-  background: #176fe7;
-  border-color: #176fe7;
-  color: #ffffff;
-}
-
-.pagination-button.ellipsis {
-  cursor: default;
-}
-
-.pagination-button:not(:disabled):hover,
-.pagination-button.active:hover {
-  background: #0c59c9;
-  border-color: #0c59c9;
-  box-shadow: 0 12px 24px rgba(7, 88, 204, 0.24);
-  color: #ffffff;
-  transform: translateY(-2px);
-}
-
-.pagination-button:disabled {
-  opacity: 1;
-}
-
 @media (max-width: 1030px) {
   .articles-section {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -330,10 +256,6 @@ const goToArticle = async (article) => {
 
   .article-image {
     aspect-ratio: 16 / 7.5;
-  }
-
-  .pagination {
-    flex-wrap: wrap;
   }
 }
 </style>

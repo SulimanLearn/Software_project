@@ -4,7 +4,6 @@
     <main class="page-stage">
       <NuxtPage />
     </main>
-    <Footer />
   </div>
 </template>
 

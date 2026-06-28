@@ -47,7 +47,10 @@
               type="text"
               placeholder="أحمد محمود"
               autocomplete="given-name"
+              :class="{ invalid: errors.firstName }"
+              @input="clearError('firstName')"
             >
+            <small v-if="errors.firstName">{{ errors.firstName }}</small>
           </label>
 
           <label class="field">
@@ -57,7 +60,10 @@
               type="text"
               placeholder="محمود"
               autocomplete="family-name"
+              :class="{ invalid: errors.lastName }"
+              @input="clearError('lastName')"
             >
+            <small v-if="errors.lastName">{{ errors.lastName }}</small>
           </label>
 
           <label class="field">
@@ -68,7 +74,10 @@
               placeholder="0591234567"
               autocomplete="tel"
               inputmode="tel"
+              :class="{ invalid: errors.phone }"
+              @input="clearError('phone')"
             >
+            <small v-if="errors.phone">{{ errors.phone }}</small>
           </label>
 
           <label class="field">
@@ -78,7 +87,10 @@
               type="email"
               placeholder="ahmed@example.com"
               autocomplete="email"
+              :class="{ invalid: errors.email }"
+              @input="clearError('email')"
             >
+            <small v-if="errors.email">{{ errors.email }}</small>
           </label>
 
           <label class="field">
@@ -90,16 +102,25 @@
               min="1"
               max="120"
               inputmode="numeric"
+              :class="{ invalid: errors.age }"
+              @input="clearError('age')"
             >
+            <small v-if="errors.age">{{ errors.age }}</small>
           </label>
 
           <label class="field select-field">
             <span>الجنس</span>
-            <select v-model="form.gender" aria-label="الجنس">
+            <select
+              v-model="form.gender"
+              aria-label="الجنس"
+              :class="{ invalid: errors.gender }"
+              @change="clearError('gender')"
+            >
               <option value="" disabled>اختر الجنس</option>
               <option value="male">ذكر</option>
               <option value="female">أنثى</option>
             </select>
+            <small v-if="errors.gender">{{ errors.gender }}</small>
           </label>
         </div>
 
@@ -155,7 +176,35 @@ const form = reactive({
   gender: '',
 })
 
+const errors = reactive({
+  firstName: '',
+  lastName: '',
+  phone: '',
+  email: '',
+  age: '',
+  gender: '',
+})
+
+const clearError = (field) => {
+  errors[field] = ''
+}
+
+const validateForm = () => {
+  errors.firstName = form.firstName.trim() ? '' : 'يرجى إدخال الاسم الكامل'
+  errors.lastName = form.lastName.trim() ? '' : 'يرجى إدخال اسم العائلة'
+  errors.phone = form.phone.trim() ? '' : 'يرجى إدخال رقم الهاتف'
+  errors.email = form.email.trim() ? '' : 'يرجى إدخال البريد الإلكتروني'
+  errors.age = form.age ? '' : 'يرجى إدخال العمر'
+  errors.gender = form.gender ? '' : 'يرجى اختيار الجنس'
+
+  return !Object.values(errors).some(Boolean)
+}
+
 const goNext = async () => {
+  if (!validateForm()) {
+    return
+  }
+
   bookingSummary.value = {
     ...bookingSummary.value,
     doctorId: doctorId.value,
@@ -494,6 +543,19 @@ const goNext = async () => {
 .field select:hover {
   border-color: rgba(59, 130, 246, 0.5);
   background: rgba(255, 255, 255, 0.86);
+}
+
+.field input.invalid,
+.field select.invalid {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.field small {
+  min-height: 16px;
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .select-field {

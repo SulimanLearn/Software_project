@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard-page" dir="rtl">
-    <NavBar />
 
     <div class="dashboard-shell">
       <aside class="admin-sidebar" aria-label="لوحة تحكم المدير">

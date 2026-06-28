@@ -16,6 +16,12 @@
           <p>اختر الخدمة التي تناسب احتياجاتك للحصول على أفضل رعاية</p>
         </header>
 
+        <Transition name="toast">
+          <div v-if="toastMessage" class="limit-toast" role="status" aria-live="polite">
+            {{ toastMessage }}
+          </div>
+        </Transition>
+
         <nav class="booking-stepper" aria-label="خطوات حجز خدمة التمريض">
           <div
             v-for="step in steps"
@@ -68,11 +74,11 @@
                 v-for="service in services"
                 :key="service.id"
                 class="service-card"
-                :class="{ selected: selectedServiceId === service.id }"
+                :class="{ selected: isSelectedService(service.id) }"
                 type="button"
                 @click="selectService(service)"
               >
-                <span v-if="selectedServiceId === service.id" class="selected-badge">
+                <span v-if="isSelectedService(service.id)" class="selected-badge">
                   <CheckCircle2 :size="18" stroke-width="2.5" aria-hidden="true" />
                 </span>
 
@@ -90,7 +96,7 @@
               <button
                 class="primary-action"
                 type="button"
-                :disabled="!selectedService"
+                :disabled="!selectedServices.length"
                 @click="goNext"
               >
                 <span>التالي</span>
@@ -149,6 +155,7 @@ const services = [
     title: 'حقن منزلية',
     price: 60,
     description: 'حقن وريدي أو عضلية في المنزل',
+    iconKey: 'syringe',
     icon: Syringe,
   },
   {
@@ -156,6 +163,7 @@ const services = [
     title: 'تغيير ضمادات',
     price: 50,
     description: 'تغيير وتنظيف الضمادات',
+    iconKey: 'bandage',
     icon: Bandage,
   },
   {
@@ -163,6 +171,7 @@ const services = [
     title: 'تركيب محاليل',
     price: 100,
     description: 'تركيب المحاليل الوريدية',
+    iconKey: 'ambulance',
     icon: Ambulance,
   },
   {
@@ -170,6 +179,7 @@ const services = [
     title: 'رعاية كبار السن',
     price: 120,
     description: 'رعاية ومتابعة كبار السن',
+    iconKey: 'user-round',
     icon: UserRound,
   },
   {
@@ -177,6 +187,7 @@ const services = [
     title: 'متابعة ما بعد العمليات',
     price: 150,
     description: 'متابعة الحالات بعد العمليات',
+    iconKey: 'clipboard-plus',
     icon: ClipboardPlus,
   },
   {
@@ -184,6 +195,7 @@ const services = [
     title: 'رعاية أطفال',
     price: 120,
     description: 'رعاية الأطفال والمواليد',
+    iconKey: 'baby',
     icon: Baby,
   },
   {
@@ -191,6 +203,7 @@ const services = [
     title: 'سحب عينات',
     price: 80,
     description: 'سحب عينات الدم',
+    iconKey: 'test-tube',
     icon: TestTube,
   },
   {
@@ -198,14 +211,26 @@ const services = [
     title: 'خدمة أخرى',
     price: 'تواصل معنا',
     description: 'خدمة حسب الطلب',
+    iconKey: 'tag',
     icon: Tag,
   },
 ]
 
-const selectedServiceId = ref(bookingState.value?.serviceId || '')
-const selectedService = computed(() =>
-  services.find((service) => service.id === selectedServiceId.value) || null,
-)
+const maxSelectedServices = 3
+const limitMessage = 'لا يمكن اختيار أكثر من 3 خدمات من الممرض الواحد'
+const toastMessage = ref('')
+let toastTimer = null
+
+const getInitialSelectedServices = () => {
+  if (Array.isArray(bookingState.value?.services) && bookingState.value.services.length) {
+    return bookingState.value.services.slice(0, maxSelectedServices)
+  }
+
+  return bookingState.value?.service ? [bookingState.value.service] : []
+}
+
+const selectedServices = ref(getInitialSelectedServices())
+const selectedServiceIds = computed(() => selectedServices.value.map((service) => service.id))
 
 const workingPeriod = computed(() =>
   selectedNurse.value?.availabilityStatus || selectedNurse.value?.shift || 'غير محددة',
@@ -215,13 +240,43 @@ const formatServicePrice = (price) => (
   typeof price === 'number' ? `${price} ₪` : price
 )
 
+const toBookingService = ({ icon, ...service }) => service
+
+const showLimitToast = () => {
+  toastMessage.value = limitMessage
+
+  if (toastTimer && import.meta.client) {
+    window.clearTimeout(toastTimer)
+  }
+
+  if (import.meta.client) {
+    toastTimer = window.setTimeout(() => {
+      toastMessage.value = ''
+    }, 2800)
+  }
+}
+
+const isSelectedService = (serviceId) => selectedServiceIds.value.includes(serviceId)
+
 const selectService = (service) => {
-  selectedServiceId.value = service.id
+  if (isSelectedService(service.id)) {
+    selectedServices.value = selectedServices.value.filter((item) => item.id !== service.id)
+  } else if (selectedServices.value.length < maxSelectedServices) {
+    selectedServices.value = [...selectedServices.value, service]
+  } else {
+    showLimitToast()
+    return
+  }
+
+  const bookingServices = selectedServices.value.map(toBookingService)
+  const [primaryService = null] = bookingServices
 
   bookingState.value = {
     ...bookingState.value,
-    serviceId: service.id,
-    service,
+    serviceIds: selectedServiceIds.value,
+    services: bookingServices,
+    serviceId: primaryService?.id || '',
+    service: primaryService,
   }
 }
 
@@ -234,7 +289,7 @@ const goBack = async () => {
 }
 
 const goNext = async () => {
-  if (!selectedService.value) {
+  if (!selectedServices.value.length || selectedServices.value.length > maxSelectedServices) {
     return
   }
 
@@ -315,6 +370,37 @@ const handleImageError = (event) => {
   font-size: clamp(0.9rem, 1.7vw, 1.02rem);
   font-weight: 600;
   line-height: 1.8;
+}
+
+.limit-toast {
+  --nursing-navbar-height: 85px;
+  --nursing-toast-gap: 20px;
+  position: fixed;
+  top: calc(var(--nursing-navbar-height) + var(--nursing-toast-gap));
+  right: 20px;
+  z-index: 5000;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 14px 18px;
+  color: #0a2a67;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #bdd8ff;
+  border-right: 4px solid #1d64f2;
+  border-radius: 12px;
+  box-shadow: 0 18px 42px rgba(15, 31, 61, 0.16);
+  font-size: 0.94rem;
+  font-weight: 900;
+  line-height: 1.6;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .booking-stepper {
@@ -696,6 +782,11 @@ const handleImageError = (event) => {
 }
 
 @media (max-width: 720px) {
+  .limit-toast {
+    --nursing-toast-gap: 16px;
+    right: 16px;
+  }
+
   .page-hero {
     margin-bottom: 24px;
   }

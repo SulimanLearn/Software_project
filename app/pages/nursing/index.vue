@@ -319,8 +319,8 @@ const selectNurse = async (nurse) => {
   min-height: 100vh;
   color: #10264c;
   background:
-    radial-gradient(circle at 12% 6%, rgba(37, 99, 235, 0.09), transparent 26%),
-    radial-gradient(circle at 92% 12%, rgba(14, 165, 233, 0.11), transparent 24%),
+    radial-gradient(circle at 12% 6%, #2563eb17, transparent 26%),
+    radial-gradient(circle at 92% 12%, #0ea5e91c, transparent 24%),
     linear-gradient(180deg, #f8fbff 0%, #ffffff 46%, #f5f9ff 100%);
 }
 

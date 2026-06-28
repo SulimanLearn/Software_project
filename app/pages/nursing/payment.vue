@@ -76,6 +76,23 @@
 
             <div class="card-fields">
               <div class="field-group wide">
+                <label for="cardholder-name">اسم حامل البطاقة</label>
+                <div class="input-wrap">
+                  <UserRound :size="18" stroke-width="2.2" aria-hidden="true" />
+                  <input
+                    id="cardholder-name"
+                    v-model.trim="cardForm.cardholderName"
+                    type="text"
+                    autocomplete="cc-name"
+                    placeholder="Suliman ALkharti"
+                    :class="{ invalid: errors.cardholderName }"
+                    @input="errors.cardholderName = ''"
+                  >
+                </div>
+                <p v-if="errors.cardholderName" class="error-message">{{ errors.cardholderName }}</p>
+              </div>
+
+              <div class="field-group wide">
                 <label for="card-number">رقم البطاقة</label>
                 <div class="input-wrap">
                   <CreditCard :size="18" stroke-width="2.2" aria-hidden="true" />
@@ -155,6 +172,7 @@ import {
   CalendarDays,
   CreditCard,
   LockKeyhole,
+  UserRound,
 } from '@lucide/vue'
 
 definePageMeta({
@@ -182,12 +200,14 @@ const paymentMethods = [
 ]
 
 const cardForm = reactive({
+  cardholderName: existingPayment.cardholderName || '',
   cardNumber: existingPayment.cardNumber || '',
   expiryDate: existingPayment.expiryDate || '',
   cvv: existingPayment.cvv || '',
 })
 
 const errors = reactive({
+  cardholderName: '',
   cardNumber: '',
   expiryDate: '',
   cvv: '',
@@ -233,6 +253,10 @@ const validatePayment = () => {
     return true
   }
 
+  if (!cardForm.cardholderName.trim()) {
+    errors.cardholderName = 'يرجى إدخال اسم حامل البطاقة'
+  }
+
   if (cardForm.cardNumber.replace(/\D/g, '').length < 16) {
     errors.cardNumber = 'يرجى إدخال رقم البطاقة كاملاً'
   }
@@ -253,6 +277,7 @@ const savePayment = () => {
     ...bookingState.value,
     payment: {
       method: paymentMethod.value,
+      cardholderName: paymentMethod.value === 'card' ? cardForm.cardholderName.trim() : '',
       cardNumber: paymentMethod.value === 'card' ? cardForm.cardNumber : '',
       expiryDate: paymentMethod.value === 'card' ? cardForm.expiryDate : '',
       cvv: paymentMethod.value === 'card' ? cardForm.cvv : '',

@@ -134,6 +134,23 @@
             </div>
 
             <div class="card-fields">
+              <div class="field-group wide">
+                <label for="doctor-card-holder-name">اسم حامل البطاقة</label>
+                <div class="input-wrap">
+                  <UserRound :size="18" stroke-width="2.2" aria-hidden="true" />
+                  <input
+                    id="doctor-card-holder-name"
+                    v-model.trim="form.cardHolderName"
+                    type="text"
+                    autocomplete="cc-name"
+                    placeholder="Suliman ALkharti"
+                    :class="{ invalid: errors.cardHolderName }"
+                    @input="clearError('cardHolderName')"
+                  >
+                </div>
+                <p v-if="errors.cardHolderName" class="error-message">{{ errors.cardHolderName }}</p>
+              </div>
+
               <label class="field full-field">
                 <span>رقم البطاقة</span>
                 <div class="input-with-icon">
@@ -248,6 +265,7 @@ const form = reactive({
   chronicDisease: '',
   bloodPressure: '',
   symptoms: '',
+  cardHolderName: '',
   cardNumber: '',
   expiryDate: '',
   cvv: '',
@@ -256,6 +274,7 @@ const form = reactive({
 const errors = reactive({
   chronicDisease: '',
   visitType: '',
+  cardHolderName: '',
   cardNumber: '',
   expiryDate: '',
   cvv: '',
@@ -379,11 +398,13 @@ const selectPayment = (method) => {
 const validate = () => {
   errors.chronicDisease = form.chronicDisease ? '' : 'يرجى اختيار حالة الأمراض المزمنة'
   errors.visitType = form.visitType ? '' : 'يرجى اختيار نوع الزيارة'
+  errors.cardHolderName = ''
   errors.cardNumber = ''
   errors.expiryDate = ''
   errors.cvv = ''
 
   if (form.paymentMethod === 'card') {
+    errors.cardHolderName = form.cardHolderName.trim() ? '' : 'يرجى إدخال اسم حامل البطاقة'
     errors.cardNumber = form.cardNumber.trim() ? '' : 'يرجى إدخال رقم البطاقة'
     errors.expiryDate = form.expiryDate.trim() ? '' : 'يرجى إدخال تاريخ الانتهاء'
     errors.cvv = form.cvv.trim() ? '' : 'يرجى إدخال رمز الأمان'
@@ -404,6 +425,15 @@ const reviewBooking = async () => {
     specialty: bookingSummary.value?.specialty || doctor.value?.specialtyName || '',
     visitType: form.visitType,
     paymentMethod: form.paymentMethod,
+    cardHolderName: form.paymentMethod === 'card' ? form.cardHolderName.trim() : '',
+    cardPayment: form.paymentMethod === 'card'
+      ? {
+          cardHolderName: form.cardHolderName.trim(),
+          cardNumber: form.cardNumber,
+          expiryDate: form.expiryDate,
+          cvv: form.cvv,
+        }
+      : null,
     fee: doctor.value?.price ?? bookingSummary.value?.fee ?? '',
   }
 
@@ -799,6 +829,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  direction: rtl;
   gap: 28px;
   margin-bottom: 24px;
   text-align: right;
@@ -812,6 +843,78 @@ watch(
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px 24px;
+}
+
+.field-group {
+  display: grid;
+  gap: 8px;
+}
+
+.field-group.wide {
+  grid-column: 1 / -1;
+}
+
+.field-group label {
+  color: #243858;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-wrap svg {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  color: #1d64f2;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.field-group input {
+  direction: ltr;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 48px 0 16px;
+  color: #10264c;
+  background: #ffffff;
+  border: 1px solid #cdd9e8;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 800;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.field-group input::placeholder {
+  color: #7f8fa7;
+}
+
+.field-group input:focus {
+  border-color: #69a7ff;
+  box-shadow: 0 0 0 4px rgba(26, 115, 248, 0.12), 0 10px 24px rgba(26, 115, 248, 0.08);
+  transform: scale(1.01);
+}
+
+.field-group input.invalid {
+  border-color: #ef4444;
+  box-shadow: none;
+}
+
+.field-group input.invalid:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+.error-message {
+  margin: 0;
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.4;
 }
 
 .full-field {
@@ -837,7 +940,7 @@ watch(
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 22px;
   margin-top: 34px;
 }
@@ -1199,6 +1302,165 @@ watch(
   .cash-info,
   .card-details-head {
     gap: 12px;
+  }
+}
+
+.card-details {
+  min-height: 128px;
+  padding: 22px;
+  background: linear-gradient(135deg, #eff6ffd9, #fffffff5);
+  border: 1px solid #cfe1f8;
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(29, 78, 216, 0.07);
+}
+
+.card-details-head {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  gap: 16px;
+  margin-bottom: 18px;
+  text-align: right;
+}
+
+.card-details h3 {
+  margin: 0;
+  color: #08265c;
+  font-size: 1.18rem;
+  font-weight: 900;
+}
+
+.card-details-head p {
+  margin: 8px 0 0;
+  color: #4a5c76;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.7;
+}
+
+.card-large-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  color: #1d64f2;
+  background: linear-gradient(135deg, #eef5ff, #dcecff);
+  border: 1px solid #bdd8ff;
+  border-radius: 16px;
+}
+
+.card-large-icon svg {
+  width: 34px;
+  height: 34px;
+  stroke-width: 2.25;
+}
+
+.card-details .card-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.card-details .field,
+.card-details .field-group {
+  display: grid;
+  gap: 8px;
+}
+
+.card-details .full-field,
+.card-details .field-group.wide {
+  grid-column: 1 / -1;
+}
+
+.card-details .field span,
+.card-details .field-group label {
+  color: #243858;
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-align: right;
+}
+
+.card-details .input-with-icon,
+.card-details .input-wrap {
+  position: relative;
+}
+
+.card-details .input-with-icon svg,
+.card-details .input-wrap svg {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  color: #1d64f2;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.card-details .field input,
+.card-details .field-group input {
+  direction: ltr;
+  width: 100%;
+  height: auto;
+  min-height: 48px;
+  padding: 0 48px 0 16px;
+  color: #10264c;
+  background: #ffffff;
+  border: 1px solid #cdd9e8;
+  border-radius: 12px;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 800;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.card-details .field input::placeholder,
+.card-details .field-group input::placeholder {
+  color: #7f8fa7;
+  font-weight: 800;
+}
+
+.card-details .field input:focus,
+.card-details .field-group input:focus {
+  border-color: #69a7ff;
+  box-shadow: 0 0 0 4px rgba(26, 115, 248, 0.12), 0 10px 24px rgba(26, 115, 248, 0.08);
+  transform: scale(1.01);
+}
+
+.card-details .field input.invalid,
+.card-details .field-group input.invalid {
+  border-color: #ef4444;
+  box-shadow: none;
+}
+
+.card-details .field input.invalid:focus,
+.card-details .field-group input.invalid:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+.card-details .field small,
+.card-details .error-message {
+  min-height: 0;
+  margin: 0;
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+@media (max-width: 720px) {
+  .card-details {
+    padding: 22px 16px;
+  }
+
+  .card-details .card-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .card-details-head {
+    align-items: flex-start;
   }
 }
 </style>

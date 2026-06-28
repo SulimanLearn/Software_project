@@ -1,6 +1,6 @@
 <template>
+    <NavBar />
     <div>
-        <NavBar />
 
         <div class="container">
             <div class="box-login">
@@ -74,6 +74,7 @@
             </div>
         </div>
     </div>
+    <Footer />
 </template>
 
 <script setup>

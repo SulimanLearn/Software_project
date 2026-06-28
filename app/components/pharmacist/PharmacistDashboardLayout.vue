@@ -1,6 +1,5 @@
 <template>
   <div class="pharmacist-portal-page" dir="rtl">
-    <NavBar />
 
     <div class="pharmacist-portal-shell">
       <PharmacistSidebar :pharmacist="pharmacist" @logout="showLogoutModal = true" />
