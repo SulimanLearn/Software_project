@@ -17,9 +17,16 @@
           v-for="notification in notifications"
           :key="notification.id"
           class="notification-card"
-          :class="{ unread: notification.unread }"
+          :class="{ unread: !notification.isRead }"
         >
-          <component :is="notification.icon" class="patient-notification-icon" :size="24" :stroke-width="2" aria-hidden="true" />
+          <component
+            :is="notificationIcons[notification.icon]"
+            class="patient-notification-icon"
+            :class="notification.color"
+            :size="24"
+            :stroke-width="2"
+            aria-hidden="true"
+          />
           <div>
             <strong>{{ notification.title }}</strong>
             <p>{{ notification.description }}</p>
@@ -27,8 +34,8 @@
           </div>
           <div class="patient-action-row">
             <button class="patient-action-button outline" type="button">{{ notification.action }}</button>
-            <button class="patient-action-button soft" type="button" @click="notification.unread = !notification.unread">
-              {{ notification.unread ? 'تعليم كمقروء' : 'تعليم كغير مقروء' }}
+            <button class="patient-action-button soft" type="button" @click="toggleRead(notification.id)">
+              {{ !notification.isRead ? 'تعليم كمقروء' : 'تعليم كغير مقروء' }}
             </button>
           </div>
         </article>
@@ -38,14 +45,29 @@
 </template>
 
 <script setup>
-import { formatArabicDate, patientNotifications } from '~/data/patientPortal'
+import {
+  Bell,
+  Calendar,
+  ClipboardList,
+  CreditCard,
+  FileText,
+  MessageCircle,
+  Pill,
+  XCircle
+} from '@lucide/vue'
+import { formatArabicDate } from '~/data/patientPortal'
 
-const notifications = ref(patientNotifications.map((notification) => ({ ...notification })))
-const unreadCount = computed(() => notifications.value.filter((notification) => notification.unread).length)
-const markAllAsRead = () => {
-  notifications.value.forEach((notification) => {
-    notification.unread = false
-  })
+const { notifications, unreadCount, toggleRead, markAllAsRead } = usePatientNotifications()
+
+const notificationIcons = {
+  calendar: Calendar,
+  bell: Bell,
+  fileText: FileText,
+  pill: Pill,
+  messageCircle: MessageCircle,
+  clipboardList: ClipboardList,
+  creditCard: CreditCard,
+  xCircle: XCircle
 }
 </script>
 
@@ -81,6 +103,42 @@ const markAllAsRead = () => {
   color: #343434;
   font-weight: 800;
   margin: 5px 0 0;
+}
+
+.patient-notification-icon.blue {
+  background: #eaf2ff;
+  color: #0b63f6;
+  stroke: #0b63f6;
+}
+
+.patient-notification-icon.purple {
+  background: #f3e8ff;
+  color: #7c3aed;
+  stroke: #7c3aed;
+}
+
+.patient-notification-icon.green {
+  background: #eafaf1;
+  color: #16a34a;
+  stroke: #16a34a;
+}
+
+.patient-notification-icon.orange {
+  background: #fff4e6;
+  color: #f97316;
+  stroke: #f97316;
+}
+
+.patient-notification-icon.emerald {
+  background: #e6fffa;
+  color: #059669;
+  stroke: #059669;
+}
+
+.patient-notification-icon.red {
+  background: #fee2e2;
+  color: #dc2626;
+  stroke: #dc2626;
 }
 
 @media (max-width: 820px) {

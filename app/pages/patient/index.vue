@@ -106,7 +106,7 @@
         </div>
 
         <div class="patient-list">
-          <article v-for="notification in patientNotifications.slice(0, 3)" :key="notification.id" class="patient-list-item">
+          <article v-for="notification in latestNotifications.slice(0, 3)" :key="notification.id" class="patient-list-item">
             <strong>{{ notification.title }}</strong>
             <p>{{ notification.description }}</p>
             <span>{{ formatArabicDate(notification.date) }} - {{ notification.time }}</span>
@@ -143,7 +143,6 @@
 import {
   formatArabicDate,
   patientAppointments,
-  patientNotifications,
   patientOrders,
   patientPrescriptions,
   patientProfile,
@@ -152,6 +151,7 @@ import {
 
 const selectedAppointment = ref(null)
 const { appointmentBookingRoute } = usePatientAppointmentBooking()
+const { latestNotifications } = usePatientNotifications()
 const upcomingAppointments = computed(() => patientAppointments.filter((appointment) => appointment.category === 'upcoming'))
 const currentArabicDate = ref('')
 

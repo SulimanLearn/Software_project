@@ -3,7 +3,6 @@ import {
   CalendarDays,
   ClipboardList,
   HeartPulse,
-  Home,
   PackageCheck,
   Pill,
   UserRound
@@ -216,53 +215,6 @@ export const patientRecords = [
     summary: 'جفاف متوسط مع سلامة فحص قاع العين.',
     recommendations: 'قطرات مرطبة ومراجعة عند استمرار الأعراض.',
     prescriptions: ['RX-7633']
-  }
-]
-
-export const patientNotifications = [
-  {
-    id: 1,
-    type: 'appointment',
-    icon: markRaw(CalendarDays),
-    title: 'تذكير بموعد قادم',
-    description: 'موعدك مع د. خالد السيد يوم الثلاثاء الساعة 10:30 ص.',
-    date: '2026-05-24',
-    time: '09:15 ص',
-    unread: true,
-    action: 'عرض الموعد'
-  },
-  {
-    id: 2,
-    type: 'prescription',
-    icon: markRaw(Pill),
-    title: 'تم إنشاء وصفة طبية',
-    description: 'أضاف الطبيب وصفة RX-7781 إلى ملفك الطبي.',
-    date: '2026-05-22',
-    time: '01:40 م',
-    unread: true,
-    action: 'عرض الوصفة'
-  },
-  {
-    id: 3,
-    type: 'order',
-    icon: markRaw(PackageCheck),
-    title: 'تحديث طلب الصيدلية',
-    description: 'طلب الأدوية ORD-4509 الآن في التوصيل.',
-    date: '2026-05-22',
-    time: '05:20 م',
-    unread: true,
-    action: 'تتبع الطلب'
-  },
-  {
-    id: 4,
-    type: 'nursing',
-    icon: markRaw(Home),
-    title: 'تحديث طلب التمريض المنزلي',
-    description: 'تم قبول طلب زيارة قياس العلامات الحيوية.',
-    date: '2026-05-21',
-    time: '04:05 م',
-    unread: false,
-    action: 'عرض الطلب'
   }
 ]
 
