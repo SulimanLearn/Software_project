@@ -1,7 +1,7 @@
 <template>
   <BaseButton
     :to="to || undefined"
-    base-class="pharmacist-action-button"
+    :base-class="baseClass"
     :variant="variant"
     :type="to ? undefined : type"
     :disabled="disabled"
@@ -10,7 +10,7 @@
   </BaseButton>
 </template>
 
-<script setup lang="ts">
+<script setup>
 defineProps({
   to: {
     type: String,
@@ -27,6 +27,10 @@ defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  baseClass: {
+    type: String,
+    default: 'app-action-button'
   }
 })
 </script>

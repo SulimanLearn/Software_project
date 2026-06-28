@@ -1,8 +1,9 @@
 <template>
-  <div class="patient-empty-state" aria-live="polite">
-    <h2>{{ title }}</h2>
-    <p>{{ description }}</p>
-  </div>
+  <BaseEmptyState
+    :title="title"
+    :description="description"
+    base-class="patient-empty-state"
+  />
 </template>
 
 <script setup>

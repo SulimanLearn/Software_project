@@ -1,7 +1,9 @@
 <template>
-  <span class="pharmacist-status-badge" :class="statusClassForPharmacist(status)">
-    {{ status }}
-  </span>
+  <BaseStatusBadge
+    :status="status"
+    :status-class="statusClassForPharmacist(status)"
+    base-class="pharmacist-status-badge"
+  />
 </template>
 
 <script setup lang="ts">
