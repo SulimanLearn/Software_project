@@ -245,9 +245,9 @@
 
 <script setup>
 import { doctors } from '~/data/doctors';
-import { specialties } from '~/data/specialties';
 
 const articles = useArticles();
+const { specialties, fetchSpecialties } = useSpecialties();
 
 const processSteps = [
     {
@@ -312,7 +312,7 @@ const formatDoctorCount = (count) => {
     return `${value} طبيب`;
 };
 
-const specialtiesWithCounts = computed(() => specialties.map((specialty) => ({
+const specialtiesWithCounts = computed(() => specialties.value.map((specialty) => ({
     ...specialty,
     count: formatDoctorCount(doctors.filter((doctor) => doctor.specialtySlug === specialty.slug).length),
 })));
@@ -328,6 +328,7 @@ const scrollToTop = () => {
 };
 
 onMounted(() => {
+    fetchSpecialties();
     updateBackToTopVisibility();
     window.addEventListener('scroll', updateBackToTopVisibility, { passive: true });
 });

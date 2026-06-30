@@ -43,10 +43,12 @@ const message = ref('')
 const error = ref('')
 
 const resetEmail = useState('resetEmail', () => '')
+const resetToken = useState('resetToken', () => '')
+const { resetPassword: resetPasswordRequest, getApiErrorMessage } = useAuth()
 
 onMounted(() => {
-  if (!resetEmail.value) {
-    navigateTo('/reset/reset')
+  if (!resetEmail.value || !resetToken.value) {
+    navigateTo('/reset')
   }
 })
 
@@ -54,8 +56,8 @@ const resetPassword = async () => {
   error.value = ''
   message.value = ''
 
-  if (password.value.length < 8) {
-    error.value = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
+  if (password.value.length < 6) {
+    error.value = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
     return
   }
 
@@ -67,24 +69,21 @@ const resetPassword = async () => {
   loading.value = true
 
   try {
-    // لاحقًا بدّل الرابط برابط Laravel API
-    // await $fetch('http://localhost:8000/api/reset-password', {
-    //   method: 'POST',
-    //   body: {
-    //     email: resetEmail.value,
-    //     password: password.value,
-    //     password_confirmation: passwordConfirmation.value
-    //   }
-    // })
+    await resetPasswordRequest({
+      email: resetEmail.value,
+      token: resetToken.value,
+      password: password.value
+    })
 
     message.value = 'تم تغيير كلمة المرور بنجاح'
 
     setTimeout(() => {
       resetEmail.value = ''
+      resetToken.value = ''
       navigateTo('/login')
     }, 1000)
   } catch (err) {
-    error.value = 'حدث خطأ أثناء تغيير كلمة المرور'
+    error.value = getApiErrorMessage(err, 'حدث خطأ أثناء تغيير كلمة المرور')
   } finally {
     loading.value = false
   }

@@ -128,12 +128,14 @@
 
             <article class="reviews-card card">
               <h2>{{ ui.reviews.title }}</h2>
+              <p v-if="reviewsLoading" class="review-status">{{ ui.reviews.loading }}</p>
+              <p v-else-if="reviewsError" class="review-status is-error">{{ reviewsError }}</p>
               <div
                 class="reviews-list"
-                :class="{ 'is-scrollable': doctor.reviews.length > 4 }"
+                :class="{ 'is-scrollable': displayReviews.length > 4 }"
               >
                 <section
-                  v-for="review in doctor.reviews"
+                  v-for="review in displayReviews"
                   :key="review.id"
                   class="review-item"
                   :aria-label="`${ui.reviews.reviewBy} ${review.patientName}`"
@@ -190,9 +192,12 @@
             :aria-label="ui.comment.placeholder"
           />
 
-          <button type="button" class="primary-button submit-button" @click="submitComment">
-            {{ ui.comment.submit }}
+          <button type="button" class="primary-button submit-button" :disabled="submittingReview" @click="submitComment">
+            {{ submittingReview ? ui.comment.submitting : ui.comment.submit }}
           </button>
+          <p v-if="commentMessage" class="review-status" :class="{ 'is-error': commentMessageType === 'error' }">
+            {{ commentMessage }}
+          </p>
         </section>
       </section>
     </main>
@@ -207,6 +212,8 @@
 const route = useRoute();
 const router = useRouter();
 const isLoggedIn = useState('isLoggedIn', () => false);
+const { user, getApiErrorMessage } = useAuth();
+const { fetchDoctorReviews, createReview } = useReviews();
 
 const ui = {
   currency: '₪',
@@ -253,6 +260,7 @@ const ui = {
     title: 'آراء المرضى',
     reviewBy: 'تقييم من',
     outOfFive: 'من 5',
+    loading: 'جاري تحميل التقييمات...',
   },
   comment: {
     title: 'التعليق والتقييم',
@@ -260,6 +268,7 @@ const ui = {
     ratingLabel: 'التقييم',
     placeholder: 'اكتب تعليقك هنا...',
     submit: 'إرسال التعليق',
+    submitting: 'جاري الإرسال...',
   },
 };
 
@@ -424,6 +433,55 @@ const selectedDate = ref('');
 const calendarCursor = ref(new Date());
 const selectedRating = ref(0);
 const commentText = ref('');
+const apiReviews = ref(null);
+const apiAverageRating = ref(null);
+const apiReviewsCount = ref(null);
+const reviewsLoading = ref(false);
+const reviewsError = ref('');
+const submittingReview = ref(false);
+const commentMessage = ref('');
+const commentMessageType = ref('success');
+
+const resolvePatientName = (patient) => {
+  if (!patient) {
+    return 'مريض';
+  }
+
+  const fullName = [patient.first_name, patient.last_name].filter(Boolean).join(' ').trim();
+  return patient.name || fullName || patient.email || 'مريض';
+};
+
+const formatReviewDate = (value) => {
+  if (!value) {
+    return new Intl.DateTimeFormat('ar', { month: 'long', year: 'numeric' }).format(new Date());
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('ar', { month: 'long', year: 'numeric' }).format(date);
+};
+
+const mapApiReview = (review) => ({
+  id: review.id,
+  patientName: resolvePatientName(review.patient),
+  rating: Number(review.rating) || 0,
+  date: formatReviewDate(review.created_at),
+  comment: review.comment || review.review || '',
+});
+
+const getCurrentPatientId = () => {
+  const currentUser = user.value || {};
+  const possibleId = currentUser.patient_id
+    || currentUser.patient?.id
+    || currentUser.profile?.patient_id
+    || currentUser.id;
+
+  return Number(possibleId) || 0;
+};
 
 const heroBadges = computed(() => {
   if (!doctor.value) {
@@ -432,9 +490,13 @@ const heroBadges = computed(() => {
 
   return [
     `${doctor.value.experienceYears} سنة خبرة`,
-    `+${doctor.value.reviewsCount} تقييم إيجابي`,
+    `+${displayReviewsCount.value} تقييم إيجابي`,
   ];
 });
+
+const displayReviews = computed(() => apiReviews.value ?? doctor.value?.reviews ?? []);
+const displayRating = computed(() => apiAverageRating.value ?? doctor.value?.rating ?? 0);
+const displayReviewsCount = computed(() => apiReviewsCount.value ?? doctor.value?.reviewsCount ?? 0);
 
 const doctorStats = computed(() => {
   if (!doctor.value) {
@@ -442,7 +504,7 @@ const doctorStats = computed(() => {
   }
 
   return [
-    { label: ui.stats.rating, value: doctor.value.rating },
+    { label: ui.stats.rating, value: Number(displayRating.value).toFixed(1) },
     { label: ui.stats.patients, value: `${doctor.value.patientsCount}+` },
     { label: ui.stats.experience, value: `${doctor.value.experienceYears}+` },
   ];
@@ -562,25 +624,59 @@ const submitComment = async () => {
     return;
   }
 
-  doctor.value.reviews.unshift({
-    id: Date.now(),
-    patientName: 'مستخدم مسجل',
-    rating: selectedRating.value,
-    date: new Intl.DateTimeFormat('ar', {
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date()),
-    comment,
-  });
+  const patientId = getCurrentPatientId();
 
-  const nextReviewsCount = doctor.value.reviewsCount + 1;
-  doctor.value.rating = Number((
-    ((doctor.value.rating * doctor.value.reviewsCount) + selectedRating.value) / nextReviewsCount
-  ).toFixed(1));
-  doctor.value.reviewsCount = nextReviewsCount;
+  if (!patientId) {
+    commentMessage.value = 'تعذر تحديد رقم المريض من بيانات تسجيل الدخول.';
+    commentMessageType.value = 'error';
+    return;
+  }
 
-  commentText.value = '';
-  selectedRating.value = 0;
+  submittingReview.value = true;
+  commentMessage.value = '';
+
+  try {
+    await createReview({
+      patient_id: patientId,
+      doctor_id: Number(doctor.value.id),
+      rating: selectedRating.value,
+      comment,
+    });
+
+    commentText.value = '';
+    selectedRating.value = 0;
+    commentMessage.value = 'تم إرسال تقييمك بنجاح.';
+    commentMessageType.value = 'success';
+    await loadDoctorReviews();
+  } catch (error) {
+    commentMessage.value = getApiErrorMessage(error, 'تعذر إرسال التقييم، حاول مرة أخرى.');
+    commentMessageType.value = 'error';
+  } finally {
+    submittingReview.value = false;
+  }
+};
+
+const loadDoctorReviews = async () => {
+  if (!doctor.value) {
+    return;
+  }
+
+  reviewsLoading.value = true;
+  reviewsError.value = '';
+
+  try {
+    const response = await fetchDoctorReviews(doctor.value.id);
+    apiReviews.value = response.reviews.map(mapApiReview);
+    apiAverageRating.value = Number(response.average_rating) || 0;
+    apiReviewsCount.value = Number(response.total_reviews) || apiReviews.value.length;
+  } catch (error) {
+    apiReviews.value = null;
+    apiAverageRating.value = null;
+    apiReviewsCount.value = null;
+    reviewsError.value = 'تعذر تحميل التقييمات من الخادم، تم عرض التقييمات المحلية مؤقتاً.';
+  } finally {
+    reviewsLoading.value = false;
+  }
 };
 
 watch(
@@ -596,6 +692,8 @@ watch(
     if (firstAvailableDate) {
       setCalendarToDate(firstAvailableDate);
     }
+
+    loadDoctorReviews();
   },
   { immediate: true },
 );
@@ -1079,6 +1177,18 @@ useHead(() => ({
   line-height: 1.65;
 }
 
+.review-status {
+  margin: 8px 0 0;
+  color: #25604a;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.review-status.is-error {
+  color: #b42318;
+}
+
 .comment-card {
   margin-top: 18px;
   padding: 18px 16px 16px;
@@ -1151,6 +1261,13 @@ useHead(() => ({
   min-height: 50px;
   margin: 13px auto 8px;
   font-size: 15px;
+}
+
+.submit-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+  opacity: 0.7;
+  transform: none;
 }
 
 .not-found {

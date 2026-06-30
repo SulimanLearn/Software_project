@@ -5,6 +5,8 @@
         <h2 id="prescriptions-title">قائمة الوصفات</h2>
         <span>{{ patientPrescriptions.length }} وصفات</span>
       </div>
+      <p v-if="prescriptionsLoading" class="prescriptions-status">جاري تحميل الوصفات...</p>
+      <p v-else-if="prescriptionsError" class="prescriptions-status is-error">{{ prescriptionsError }}</p>
 
       <div class="patient-table-wrap">
         <table class="patient-table">
@@ -85,10 +87,17 @@
 </template>
 
 <script setup>
-import { formatArabicDate, patientOrders, patientPrescriptions, patientProfile, patientRecords } from '~/data/patientPortal'
+import { formatArabicDate, patientOrders, patientProfile, patientRecords } from '~/data/patientPortal'
 
 const selectedPrescription = ref(null)
 const { doctorPrescriptionPrintDate, doctorPrescriptionPrintItem, printDoctorPrescription } = useDoctorPrescriptionPrint()
+const { user } = useAuth()
+const {
+  patientPrescriptions,
+  prescriptionsLoading,
+  prescriptionsError,
+  fetchPatientPrescriptions
+} = usePrescriptions()
 
 const patientPrescriptionOwner = {
   id: 'P-2056',
@@ -115,9 +124,37 @@ const printPrescription = (prescription) => {
 }
 
 const pharmacyOrderRoute = (prescription) => `/patient/pharmacy-order/${encodeURIComponent(prescription.number)}`
+
+const currentPatientId = computed(() => {
+  const currentUser = user.value || {}
+  const possibleId = currentUser.patient_id
+    || currentUser.patient?.id
+    || currentUser.profile?.patient_id
+    || currentUser.id
+
+  return Number(possibleId) || 0
+})
+
+onMounted(() => {
+  if (currentPatientId.value) {
+    fetchPatientPrescriptions(currentPatientId.value)
+  }
+})
 </script>
 
 <style>
+.prescriptions-status {
+  color: #25604a;
+  font-size: 14px;
+  font-weight: 900;
+  margin: 0 0 14px;
+  text-align: center;
+}
+
+.prescriptions-status.is-error {
+  color: #b42318;
+}
+
 .print-area {
   inset-block-start: 0;
   inset-inline-start: -100vw;

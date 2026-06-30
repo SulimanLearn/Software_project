@@ -27,7 +27,9 @@
                         </div>
                     </div> <!-- .end fields -->
                     <div class="btns">
-                        <button class="login-btn" type="submit">تسجيل الدخول</button>
+                        <button class="login-btn" type="submit" :disabled="loading">
+                            {{ loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول' }}
+                        </button>
                         <div class="dont-have-acount">
                             
                             <p>ليس لديك حساب؟ <NuxtLink class="register-now" to="/register">سجل الان</NuxtLink></p>
@@ -181,6 +183,10 @@
         color: white;
         border: none;
         cursor: pointer;
+    }
+    .login-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
     }
     .create-new-account-btn {
         background-color: inherit;
@@ -341,14 +347,15 @@
 }
 </style>
 <script setup>
-    const email = ref('')
+const route = useRoute()
+const { login: loginUser, authLoading, getApiErrorMessage } = useAuth()
+
+const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
-
-const isLoggedIn = useState('isLoggedIn', () => false)
+const loading = computed(() => authLoading.value)
 
 const login = async () => {
-
   errorMessage.value = ''
 
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -363,21 +370,17 @@ const login = async () => {
     return
   }
 
-  if (
-    email.value === 'admin@gmail.com' &&
-    password.value === '123456'
-  ) {
+  try {
+    await loginUser({
+      email: email.value,
+      password: password.value
+    })
 
-    // تغيير حالة تسجيل الدخول
-    isLoggedIn.value = true
-
-    // الانتقال للصفحة الرئيسية
-    await navigateTo('/')
-
-  } else {
-    errorMessage.value = 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+    const redirectTo = typeof route.query.redirect === 'string' ? route.query.redirect : '/patient'
+    await navigateTo(redirectTo)
+  } catch (error) {
+    errorMessage.value = getApiErrorMessage(error, 'البريد الإلكتروني أو كلمة المرور غير صحيحة')
   }
-
 }
 </script>
 

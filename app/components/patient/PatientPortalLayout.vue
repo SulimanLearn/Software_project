@@ -61,12 +61,10 @@ defineProps({
 })
 
 const showLogoutModal = ref(false)
-const isLoggedIn = useState('isLoggedIn', () => false)
-const user = useState('user', () => ({ name: '' }))
+const { logout } = useAuth()
 
 const confirmLogout = async () => {
-  isLoggedIn.value = false
-  user.value = { name: '' }
+  await logout()
   showLogoutModal.value = false
   await navigateTo('/login')
 }

@@ -18,10 +18,29 @@
           :items="patientHeaderItems"
         />
 
+        <section class="form-card" aria-labelledby="prescription-info-title">
+          <h2 id="prescription-info-title">بيانات الوصفة</h2>
+          <div class="prescription-meta-form">
+            <label>
+              <span>رقم الموعد</span>
+              <input v-model="prescriptionForm.appointmentId" type="number" min="1" placeholder="مثال: 12" :class="{ invalid: prescriptionErrors.appointmentId }">
+            </label>
+            <label>
+              <span>ملاحظات الوصفة</span>
+              <input v-model="prescriptionForm.notes" type="text" placeholder="ملاحظات عامة اختيارية">
+            </label>
+          </div>
+        </section>
+
         <section class="form-card" aria-labelledby="add-medicine-title">
           <h2 id="add-medicine-title">إضافة دواء</h2>
 
           <form class="medicine-form" @submit.prevent="addMedicine">
+            <label>
+              <span>رقم الدواء</span>
+              <input v-model="medicineForm.medicationId" type="number" min="1" placeholder="Medication ID" :class="{ invalid: errors.medicationId }">
+            </label>
+
             <label>
               <span>اسم الدواء</span>
               <input v-model="medicineForm.name" type="text" placeholder="ابحث عن الدواء" :class="{ invalid: errors.name }">
@@ -53,7 +72,7 @@
             </label>
 
             <p v-if="hasErrors" class="form-error">
-              يرجى تعبئة بيانات الدواء المطلوبة.
+              يرجى تعبئة بيانات الدواء المطلوبة، وخاصة رقم الدواء.
             </p>
 
             <button class="primary-button add-button" type="submit">
@@ -102,8 +121,8 @@
           </div>
 
           <div class="form-actions">
-            <button class="primary-button" type="button" @click="savePrescription">
-              حفظ الوصفة
+            <button class="primary-button" type="button" :disabled="savingPrescription" @click="savePrescription">
+              {{ savingPrescription ? 'جاري حفظ الوصفة...' : 'حفظ الوصفة' }}
             </button>
             <button class="secondary-button" type="button" @click="goBack">
               إلغاء
@@ -140,8 +159,10 @@ let toastTimer
 
 const isLoggedIn = useState('isLoggedIn', () => false)
 const user = useState('user', () => ({ name: '' }))
+const { getApiErrorMessage } = useAuth()
 const { addPrescription, loadPersistedRecords } = useDoctorPatientRecords()
 const { findPatient } = useDoctorPatients()
+const { createPrescription } = usePrescriptions()
 
 const doctor = {
   name: 'د. خالد السيد',
@@ -171,7 +192,17 @@ const patientHeaderItems = computed(() => [
   { label: 'تاريخ الزيارة', value: patient.value.visitDate }
 ])
 
+const prescriptionForm = reactive({
+  appointmentId: String(route.query.appointment_id || route.query.appointmentId || ''),
+  notes: ''
+})
+
+const prescriptionErrors = reactive({
+  appointmentId: false
+})
+
 const medicineForm = reactive({
+  medicationId: '',
   name: '',
   quantity: '',
   dose: '',
@@ -181,6 +212,7 @@ const medicineForm = reactive({
 })
 
 const errors = reactive({
+  medicationId: false,
   name: false,
   quantity: false,
   dose: false,
@@ -191,6 +223,7 @@ const errors = reactive({
 const medicines = ref([
   {
     id: 1,
+    medicationId: 1,
     name: 'باراسيتامول 500مجم',
     quantity: '20',
     dose: '500 مجم',
@@ -199,10 +232,12 @@ const medicines = ref([
     instructions: 'بعد الطعام'
   }
 ])
+const savingPrescription = ref(false)
 
 const hasErrors = computed(() => Object.values(errors).some(Boolean))
 
 const validateMedicine = () => {
+  errors.medicationId = !Number(medicineForm.medicationId)
   errors.name = !medicineForm.name.trim()
   errors.quantity = !medicineForm.quantity.trim()
   errors.dose = !medicineForm.dose.trim()
@@ -212,6 +247,7 @@ const validateMedicine = () => {
 }
 
 const resetMedicineForm = () => {
+  medicineForm.medicationId = ''
   medicineForm.name = ''
   medicineForm.quantity = ''
   medicineForm.dose = ''
@@ -240,6 +276,7 @@ const addMedicine = () => {
 
   medicines.value.push({
     id: Date.now(),
+    medicationId: Number(medicineForm.medicationId),
     name: medicineForm.name,
     quantity: medicineForm.quantity,
     dose: medicineForm.dose,
@@ -263,37 +300,71 @@ const showToast = (message) => {
   }, 2600)
 }
 
-const savePrescription = () => {
-  if (!medicines.value.length) {
-    showToast('يرجى إضافة دواء واحد على الأقل')
-    return
-  }
+const validatePrescription = () => {
+  prescriptionErrors.appointmentId = !Number(prescriptionForm.appointmentId)
+  return !prescriptionErrors.appointmentId
+}
 
+const prescriptionForLocalRecords = (source = null) => {
   const date = new Date().toISOString().slice(0, 10)
   const sequence = String(Date.now()).slice(-5)
 
-  addPrescription(currentPatientId.value, {
-    code: `RX-${patient.value.fileNo.replace('P-', '')}-${sequence}`,
-    date,
-    doctor: doctor.name,
-    status: 'نشطة',
-    medicines: medicines.value.map((medicine) => ({
+  return {
+    code: source?.code || source?.number || `RX-${patient.value.fileNo.replace('P-', '')}-${sequence}`,
+    date: source?.date || date,
+    doctor: source?.doctor || source?.doctorName || doctor.name,
+    status: source?.status || 'نشطة',
+    medicines: (source?.medicines || medicines.value).map((medicine) => ({
+      medicationId: medicine.medicationId,
       name: medicine.name,
       quantity: medicine.quantity,
-      dose: medicine.dose,
+      dose: medicine.dose || medicine.dosage,
+      dosage: medicine.dosage || medicine.dose,
       frequency: medicine.frequency,
       duration: medicine.duration,
       instructions: medicine.instructions,
       notes: medicine.instructions
     })),
-    notes: medicines.value.map((medicine) => medicine.instructions).filter(Boolean).join('، ')
-  })
+    notes: source?.notes || prescriptionForm.notes || medicines.value.map((medicine) => medicine.instructions).filter(Boolean).join('، ')
+  }
+}
 
-  // Future API integration point: replace addPrescription with a backend mutation.
-  showToast('تم حفظ الوصفة بنجاح')
-  window.setTimeout(() => {
-    navigateTo(`/doctor/patients/${currentPatientId.value}?tab=prescriptions`)
-  }, 650)
+const savePrescription = async () => {
+  if (!medicines.value.length) {
+    showToast('يرجى إضافة دواء واحد على الأقل')
+    return
+  }
+
+  if (!validatePrescription()) {
+    showToast('يرجى إدخال رقم الموعد قبل حفظ الوصفة')
+    return
+  }
+
+  savingPrescription.value = true
+
+  try {
+    const savedPrescription = await createPrescription({
+      appointment_id: Number(prescriptionForm.appointmentId),
+      patient_id: Number(currentPatientId.value),
+      notes: prescriptionForm.notes || medicines.value.map((medicine) => medicine.instructions).filter(Boolean).join('، '),
+      items: medicines.value.map((medicine) => ({
+        medication_id: Number(medicine.medicationId),
+        dosage: medicine.dose,
+        frequency: medicine.frequency,
+        duration: medicine.duration
+      }))
+    })
+
+    addPrescription(currentPatientId.value, prescriptionForLocalRecords(savedPrescription))
+    showToast('تم حفظ الوصفة عبر الخادم بنجاح')
+    window.setTimeout(() => {
+      navigateTo(`/doctor/patients/${currentPatientId.value}?tab=prescriptions`)
+    }, 650)
+  } catch (error) {
+    showToast(getApiErrorMessage(error, 'تعذر حفظ الوصفة، تأكد من رقم الموعد ورقم الدواء.'))
+  } finally {
+    savingPrescription.value = false
+  }
 }
 
 const goBack = () => {
@@ -514,7 +585,8 @@ const LogoutModal = {
 }
 
 .summary-grid span,
-.medicine-form label span {
+.medicine-form label span,
+.prescription-meta-form label span {
   color: #343434;
   display: block;
   font-size: 13px;
@@ -545,13 +617,19 @@ const LogoutModal = {
   margin: 0 0 18px;
 }
 
-.medicine-form {
+.medicine-form,
+.prescription-meta-form {
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.medicine-form input {
+.prescription-meta-form {
+  grid-template-columns: minmax(180px, 0.45fr) minmax(260px, 1fr);
+}
+
+.medicine-form input,
+.prescription-meta-form input {
   background-color: #ffffff;
   border: 1px solid #8dbbfb;
   border-radius: 12px;
@@ -562,7 +640,8 @@ const LogoutModal = {
   width: 100%;
 }
 
-.medicine-form input:focus {
+.medicine-form input:focus,
+.prescription-meta-form input:focus {
   border-color: #0b63f6;
   box-shadow: 0 0 0 3px rgba(90, 153, 239, 0.18);
 }
@@ -671,6 +750,11 @@ td:last-child {
   color: #ffffff;
 }
 
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .delete-button {
   background-color: #ffe4e4;
   border: 1px solid #f2a3a3;
@@ -740,7 +824,8 @@ td:last-child {
     padding: 28px 22px 42px;
   }
 
-  .medicine-form {
+  .medicine-form,
+  .prescription-meta-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -885,7 +970,8 @@ td:last-child {
   }
 
   .sidebar-nav,
-  .medicine-form {
+  .medicine-form,
+  .prescription-meta-form {
     grid-template-columns: 1fr;
   }
 
