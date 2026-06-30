@@ -7,7 +7,7 @@
                     <div class="info">
                         <h1>تسجيل الدخول</h1>
                         <p>مرحباً بعودتك! سجّل دخولك للمتابعة</p>
-                    </div> <!-- .end info -->
+                    </div> 
                     <div class="fields">
                         <div class="email field">
                             <label for="email-inputfield">البريد الالكتروني</label>
@@ -46,7 +46,7 @@
                                 <NuxtLink class="Forgot-password" to="/reset">هل نسيت كلمة المرور؟</NuxtLink>
                             </div>
                         </div>
-                    </div> <!-- .end fields -->
+                    </div> 
                     <div class="btns">
                         <button class="login-btn" type="submit" :disabled="loading">
                             {{ loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول' }}
@@ -72,10 +72,10 @@
                             </a>
                         </div>
                         
-                    </div> <!-- .end btns -->
-                </form> <!-- .end form -->
-            </div> <!-- .end box-login -->
-        </div> <!-- .end container -->
+                    </div>
+                </form>
+            </div>
+        </div>
         <Footer />
     </div>
 </template>
