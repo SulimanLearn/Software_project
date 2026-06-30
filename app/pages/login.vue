@@ -10,17 +10,38 @@
                     </div> <!-- .end info -->
                     <div class="fields">
                         <div class="email field">
-                        <label for="email-inputfield">البريد الالكتروني</label>
-                        <input type="email" id="email-inputfield" placeholder="email@example.com" v-model="email"/>
+                            <label for="email-inputfield">البريد الالكتروني</label>
+                            <div class="input-wrap">
+                                <Mail class="input-icon" :size="18" aria-hidden="true" />
+                                <input type="email" id="email-inputfield" placeholder="ahmed@gmail.com" v-model="email"/>
+                            </div>
                         </div>
                         <div class="password field">
                             <label for="password-inputfield">كلمة المرور</label>
-                            <input type="password" id="password-inputfield" placeholder="........" v-model="password"/>
+                            <div class="input-wrap">
+                                <LockKeyhole class="input-icon" :size="18" aria-hidden="true" />
+                                <input
+                                    :type="showPassword ? 'text' : 'password'"
+                                    id="password-inputfield"
+                                    class="password-input"
+                                    placeholder="********"
+                                    v-model="password"
+                                />
+                                <button
+                                    class="password-toggle"
+                                    type="button"
+                                    :aria-label="showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'"
+                                    @click="showPassword = !showPassword"
+                                >
+                                    <EyeOff v-if="showPassword" :size="18" aria-hidden="true" />
+                                    <Eye v-else :size="18" aria-hidden="true" />
+                                </button>
+                            </div>
                             <p class="error-message" v-if="errorMessage">{{ errorMessage }}</p>
                             <div class="remmember-and-forget-password">
                                 <div class="remmember-me-btn">
                                     <input type="checkbox" id="remmember-me">
-                                    <label for="remmember-me">ذكرني</label>
+                                    <label for="remmember-me">تذكرني</label>
                                 </div>
                                 <NuxtLink class="Forgot-password" to="/reset">هل نسيت كلمة المرور؟</NuxtLink>
                             </div>
@@ -61,23 +82,52 @@
 <style scoped>
     .container {
         direction: rtl;
-        min-height: 107vh;
+        min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
         user-select: none;
-        background: radial-gradient(circle at 12% 10%, #b4d5ff38 0 10%, transparent 10.5%),
-            radial-gradient(circle at 88% 18%, #ffffffd1 0 11%, transparent 11.5%),
-            linear-gradient(180deg, #f9fbff 0%, #e9f5ff 100%)
+        padding: 20px;
+        background:
+            radial-gradient(circle at 10% 15%, #64c7ff30 0 9%, transparent 9.5%),
+            radial-gradient(circle at 90% 12%, #ffffffd9 0 10%, transparent 10.5%),
+            radial-gradient(circle at 18% 88%, #0ea5e91f 0 11%, transparent 11.5%),
+            linear-gradient(145deg, #f9fbff 0%, #eaf6ff 52%, #f5fbff 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    .container::before,
+    .container::after {
+        content: "";
+        position: absolute;
+        border: 1px solid #62bdf14f;
+        border-radius: 28px;
+        pointer-events: none;
+    }
+    .container::before {
+        width: 130px;
+        height: 46px;
+        top: 18%;
+        right: 9%;
+        transform: rotate(42deg);
+    }
+    .container::after {
+        width: 92px;
+        height: 92px;
+        left: 8%;
+        bottom: 14%;
+        border-radius: 50%;
     }
     .box-login {
-        width: 529px;
-        /* height: 676px; */
-        background-color: #DAE6F8;
-        padding: 36px 25px 30px 25px;
-        border: 1px solid #0654CB;
-        box-shadow: 3px 3px 6px 0px #00000029;
-        border-radius: 25px;
+        width: 100%;
+        max-width: 529px;
+        background: linear-gradient(180deg, #f7fbff 0%, #daeafb 100%);
+        padding: 32px 26px;
+        border: 1px solid #7fb6f4;
+        box-shadow: 0 22px 55px #0b4ea526, 0 8px 20px #0b4ea51c;
+        border-radius: 24px;
+        position: relative;
+        z-index: 1;
     }
     
     form {
@@ -111,27 +161,77 @@
         margin-bottom: 16px;
     }
     label {
-        font-weight: 400;
-        font-size: 19px;
+        color: #14345f;
+        font-weight: 600;
+        font-size: 17px;
+    }
+    .input-wrap {
+        width: 100%;
+        position: relative;
+    }
+    .input-icon {
+        position: absolute;
+        top: 50%;
+        right: 13px;
+        transform: translateY(-50%);
+        color: #2b78d4;
+        pointer-events: none;
     }
     input {
+        width: 100%;
         height: 44px;
         border-radius: 11px;
-        border: 1px solid #0654CB;
-        background-color: inherit;
-        padding: 0 10px;
+        border: 1px solid #9fc8f4;
+        background-color: #ffffffc9;
+        color: #10233f;
+        padding: 0 42px 0 12px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
     }
-    input:focus {
-        border: 2px solid #0654CB;
+    .password-input {
+        padding-left: 42px;
+    }
+    .password-toggle {
+        position: absolute;
+        top: 50%;
+        left: 13px;
+        width: auto;
+        height: auto;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        color: #2b78d4;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: translateY(-50%);
+        box-shadow: none;
+        transition: color 0.2s ease;
+    }
+    .password-toggle:hover,
+    .password-toggle:focus {
+        color: #0654CB;
         outline: none;
         box-shadow: none;
+        transform: translateY(-50%);
+    }
+    input::placeholder {
+        color: #7f97b3;
+    }
+    input:focus {
+        outline: none;
+        border-color: #0654CB;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px #2d79f326;
+        transform: translateY(-1px);
     }
     .error-message {
         width: 100%;
-        color: #e63946;
+        color: #d7263d;
         font-size: 15px;
         font-weight: 500;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+        margin: 0;
     }
     .remmember-and-forget-password {
         width: 100%;
@@ -143,24 +243,43 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        gap: 6px;
         font-weight: 400;
     }
     .remmember-me-btn label {
         font-weight: 300;
     }
-    .remmember-me-btn input, label {
+    .remmember-me-btn input {
+        width: 17px;
+        height: 17px;
+        padding: 0;
+        accent-color: #0654CB;
+        transform: none;
+    }
+    .remmember-me-btn input:focus {
+        transform: none;
+        box-shadow: 0 0 0 3px #2d79f326;
+    }
+    .remmember-me-btn input,
+    label {
         cursor: pointer;
     }
     .remmember-and-forget-password .Forgot-password {
         text-decoration: none;
         color: #2d79f3;
+        transition: color 0.2s ease;
+    }
+    .remmember-and-forget-password .Forgot-password:hover,
+    .dont-have-acount .register-now:hover {
+        color: #0654CB;
     }
     button {
         width: 100%;
         height: 44px;
         border-radius: 11px;
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
     .btns {
         width: 100%;
@@ -177,15 +296,15 @@
     }
     .login-btn {
         margin-top: -13px;
-        background-color: #0654CB;
+        background: linear-gradient(135deg, #0654CB 0%, #2d79f3 100%);
         color: white;
         border: none;
         cursor: pointer;
+        box-shadow: 0 12px 24px #0654cb30;
     }
-    .create-new-account-btn {
-        background-color: inherit;
-        border: 1px solid #0654CB;
-        color: #000000;
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 28px #0654cb3d;
     }
     .dividing-line {
         display: flex;
@@ -216,9 +335,15 @@
         height: 44px;
         border-radius: 11px;
         border: 1px solid #0654CB;
-        color: #000000;
-        background-color: inherit;
+        color: #063f95;
+        background-color: #ffffff8f;
         padding: 0 10px;
+        transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .login-with-google-apple a:hover {
+        background-color: #ffffff;
+        box-shadow: 0 10px 20px #0654cb1c;
+        transform: translateY(-2px);
     }
     .login-with-google-apple img {
         width: 25px;
@@ -341,9 +466,12 @@
 }
 </style>
 <script setup>
-    const email = ref('')
+import { Eye, EyeOff, LockKeyhole, Mail } from '@lucide/vue'
+
+const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const showPassword = ref(false)
 
 const isLoggedIn = useState('isLoggedIn', () => false)
 

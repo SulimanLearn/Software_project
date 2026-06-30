@@ -268,7 +268,6 @@ import {
     UserCircle,
     Users
 } from '@lucide/vue'
-import { F } from 'vue-router/dist/index-D_VEAp3P.js';
 </script>
 
 <style scoped>
