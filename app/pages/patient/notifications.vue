@@ -1,8 +1,8 @@
 <template>
   <PatientPortalLayout title="الإشعارات" subtitle="متابعة تذكيرات المواعيد والوصفات والطلبات وخدمات التمريض.">
     <template #header-action>
-      <button class="patient-save-button" type="button" @click="markAllAsRead">
-        تعليم الكل كمقروء
+      <button class="patient-save-button" type="button" :disabled="notificationsLoading || !unreadCount" @click="markAllAsRead">
+        {{ notificationsLoading ? 'جاري التحميل...' : 'تعليم الكل كمقروء' }}
       </button>
     </template>
 
@@ -11,6 +11,8 @@
         <h2 id="notifications-title">كل الإشعارات</h2>
         <span>{{ unreadCount }} غير مقروءة</span>
       </div>
+      <p v-if="notificationsLoading" class="notifications-api-status">جاري تحميل الإشعارات...</p>
+      <p v-else-if="notificationsError" class="notifications-api-status is-error">{{ notificationsError }}</p>
 
       <div class="notifications-list">
         <article
@@ -33,9 +35,14 @@
             <span>{{ formatArabicDate(notification.date) }} - {{ notification.time }}</span>
           </div>
           <div class="patient-action-row">
-            <button class="patient-action-button outline" type="button">{{ notification.action }}</button>
-            <button class="patient-action-button soft" type="button" @click="toggleRead(notification.id)">
-              {{ !notification.isRead ? 'تعليم كمقروء' : 'تعليم كغير مقروء' }}
+            <button class="patient-action-button outline" type="button" @click="openNotification(notification)">
+              {{ notification.action }}
+            </button>
+            <button class="patient-action-button soft" type="button" :disabled="notification.isRead" @click="toggleRead(notification.id)">
+              {{ !notification.isRead ? 'تعليم كمقروء' : 'مقروءة' }}
+            </button>
+            <button class="patient-action-button danger" type="button" @click="deleteNotification(notification.id)">
+              حذف
             </button>
           </div>
         </article>
@@ -57,7 +64,16 @@ import {
 } from '@lucide/vue'
 import { formatArabicDate } from '~/data/patientPortal'
 
-const { notifications, unreadCount, toggleRead, markAllAsRead } = usePatientNotifications()
+const {
+  notifications,
+  unreadCount,
+  notificationsLoading,
+  notificationsError,
+  fetchNotifications,
+  toggleRead,
+  markAllAsRead,
+  deleteNotification
+} = usePatientNotifications()
 
 const notificationIcons = {
   calendar: Calendar,
@@ -69,12 +85,36 @@ const notificationIcons = {
   creditCard: CreditCard,
   xCircle: XCircle
 }
+
+const openNotification = async (notification) => {
+  if (!notification.isRead) {
+    await toggleRead(notification.id)
+  }
+
+  await navigateTo(notification.route || '/patient')
+}
+
+onMounted(() => {
+  fetchNotifications()
+})
 </script>
 
 <style scoped>
 .notifications-list {
   display: grid;
   gap: 14px;
+}
+
+.notifications-api-status {
+  color: #25604a;
+  font-size: 14px;
+  font-weight: 900;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.notifications-api-status.is-error {
+  color: #b42318;
 }
 
 .notification-card {

@@ -223,7 +223,8 @@ const router = useRouter()
 const {
   latestNotifications,
   unreadCount: unreadNotificationCount,
-  markAsRead
+  markAsRead,
+  fetchNotifications
 } = usePatientNotifications()
 
 const notificationIcons = {
@@ -265,8 +266,8 @@ const toggleUserMenu = () => {
   isNotificationMenuOpen.value = false
 }
 
-const markNotificationAsRead = (notification) => {
-  markAsRead(notification.id)
+const markNotificationAsRead = async (notification) => {
+  await markAsRead(notification.id)
 }
 
 const goToNotifications = async () => {
@@ -304,6 +305,10 @@ const logout = async () => {
 }
 
 onMounted(() => {
+  if (isLoggedIn.value) {
+    fetchNotifications()
+  }
+
   document.addEventListener('click', closeUserMenuOnOutsideClick)
   document.addEventListener('click', closeNotificationMenuOnOutsideClick)
 })

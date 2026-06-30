@@ -19,8 +19,9 @@
       <section class="patient-dashboard-card" aria-labelledby="profile-form-title">
         <div class="patient-section-header">
           <h2 id="profile-form-title">البيانات الشخصية</h2>
-          <span>يمكن ربط الحقول بواجهة API لاحقاً</span>
+          <span>{{ patientLoading ? 'جاري تحميل البيانات...' : 'مرتبطة بملف المريض' }}</span>
         </div>
+        <p v-if="patientError" class="profile-error">{{ patientError }}</p>
 
         <form class="patient-form-grid" @submit.prevent="saveProfile">
           <label class="patient-form-field">
@@ -44,24 +45,21 @@
             <input v-model="form.dateOfBirth" type="date" required>
           </label>
           <label class="patient-form-field">
-            <span>فصيلة الدم</span>
-            <select v-model="form.bloodType">
-              <option>O+</option>
-              <option>O-</option>
-              <option>A+</option>
-              <option>A-</option>
-              <option>B+</option>
-              <option>B-</option>
-              <option>AB+</option>
-              <option>AB-</option>
+            <span>الجنس</span>
+            <select v-model="form.gender">
+              <option value="">غير محدد</option>
+              <option value="male">ذكر</option>
+              <option value="female">أنثى</option>
             </select>
           </label>
           <label class="patient-form-field full">
-            <span>العنوان</span>
-            <textarea v-model.trim="form.address" rows="3" required />
+            <span>نبذة طبية</span>
+            <textarea v-model.trim="form.bio" rows="3" placeholder="اكتب أي ملاحظات طبية مهمة" />
           </label>
           <div class="patient-action-row">
-            <button class="patient-save-button" type="submit">حفظ التغييرات</button>
+            <button class="patient-save-button" type="submit" :disabled="patientLoading">
+              {{ patientLoading ? 'جاري الحفظ...' : 'حفظ التغييرات' }}
+            </button>
           </div>
         </form>
       </section>
@@ -103,7 +101,24 @@
 import { UserRound } from '@lucide/vue'
 import { patientProfile } from '~/data/patientPortal'
 
-const form = reactive({ ...patientProfile })
+const {
+  currentPatientId,
+  patientProfile: apiPatientProfile,
+  patientLoading,
+  patientError,
+  fetchPatientProfile,
+  updatePatientProfile
+} = usePatients()
+const { getApiErrorMessage } = useAuth()
+const form = reactive({
+  firstName: patientProfile.firstName,
+  lastName: patientProfile.lastName,
+  phone: patientProfile.phone,
+  email: patientProfile.email,
+  dateOfBirth: patientProfile.dateOfBirth,
+  gender: '',
+  bio: ''
+})
 const password = reactive({ current: '', next: '', confirm: '' })
 const passwordError = ref('')
 const toastMessage = ref('')
@@ -115,8 +130,36 @@ const showToast = (message) => {
   }, 2400)
 }
 
-const saveProfile = () => {
-  showToast('تم حفظ التغييرات بنجاح')
+const fillFormFromProfile = (profile) => {
+  form.firstName = profile.firstName || ''
+  form.lastName = profile.lastName || ''
+  form.phone = profile.phone || ''
+  form.email = profile.email || ''
+  form.dateOfBirth = profile.dateOfBirth || ''
+  form.gender = profile.gender || ''
+  form.bio = profile.bio || ''
+}
+
+const saveProfile = async () => {
+  if (!currentPatientId.value) {
+    showToast('تعذر تحديد رقم المريض من بيانات تسجيل الدخول')
+    return
+  }
+
+  try {
+    const profile = await updatePatientProfile(currentPatientId.value, {
+      full_name: `${form.firstName} ${form.lastName}`.trim(),
+      email: form.email,
+      phone: form.phone,
+      birth_date: form.dateOfBirth || null,
+      gender: form.gender || null,
+      bio: form.bio || null
+    })
+    fillFormFromProfile(profile)
+    showToast('تم حفظ التغييرات بنجاح')
+  } catch (error) {
+    showToast(getApiErrorMessage(error, 'تعذر حفظ بيانات الملف الشخصي'))
+  }
 }
 
 const savePassword = () => {
@@ -130,6 +173,13 @@ const savePassword = () => {
   password.confirm = ''
   showToast('تم تغيير كلمة المرور بنجاح')
 }
+
+watch(apiPatientProfile, fillFormFromProfile, { immediate: true })
+
+onMounted(async () => {
+  const profile = await fetchPatientProfile()
+  fillFormFromProfile(profile)
+})
 </script>
 
 <style scoped>

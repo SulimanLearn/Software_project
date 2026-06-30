@@ -99,7 +99,7 @@
 import { formatPharmacistDate, pharmacistStatusOptions } from '~/data/pharmacistPortal'
 
 const route = useRoute()
-const { orders, updateOrderStatus } = usePharmacistPortal()
+const { orders, fetchOrders, fetchOrderDetails, updateOrderStatus } = usePharmacistPortal()
 const order = computed(() => orders.value.find(item => item.id === route.params.id || item.number === route.params.id))
 const statusForm = ref('')
 const toastMessage = ref('')
@@ -115,12 +115,25 @@ const showToast = (message: string) => {
   }, 2400)
 }
 
-const saveStatus = () => {
+const saveStatus = async () => {
   if (!order.value || !statusForm.value) return
 
-  updateOrderStatus(order.value.number, statusForm.value)
+  await updateOrderStatus(order.value.number, statusForm.value)
   showToast('تم تحديث الحالة بنجاح وتحديث طلب المريض المرتبط')
 }
+
+onMounted(async () => {
+  await fetchOrders()
+
+  const id = String(route.params.id || '').replace('ORD-', '')
+  if (id) {
+    try {
+      await fetchOrderDetails(id)
+    } catch {
+      // The list data is enough to keep this page usable if details fail.
+    }
+  }
+})
 </script>
 
 <style scoped>

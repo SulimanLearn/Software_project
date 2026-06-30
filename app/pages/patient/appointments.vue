@@ -52,6 +52,8 @@
         <h2 id="appointments-title">قائمة المواعيد</h2>
         <span>{{ filteredAppointments.length }} موعد</span>
       </div>
+      <p v-if="patientAppointmentsLoading" class="appointments-status">جاري تحميل المواعيد...</p>
+      <p v-else-if="patientAppointmentsError" class="appointments-status is-error">{{ patientAppointmentsError }}</p>
 
       <div v-if="filteredAppointments.length" class="patient-table-wrap">
         <table class="patient-table">
@@ -180,9 +182,14 @@
 </template>
 
 <script setup>
-import { formatArabicDate, patientAppointments } from '~/data/patientPortal'
+import { formatArabicDate } from '~/data/patientPortal'
 
-const appointments = ref(patientAppointments.map((appointment) => ({ ...appointment })))
+const {
+  patientAppointments: appointments,
+  patientAppointmentsLoading,
+  patientAppointmentsError,
+  fetchPatientAppointments
+} = usePatients()
 const { appointmentBookingRoute } = usePatientAppointmentBooking()
 const selectedAppointment = ref(null)
 const activeFilter = ref('all')
@@ -223,9 +230,25 @@ const cancelAppointment = (appointment) => {
   appointment.category = 'cancelled'
   showToast('تم إلغاء الموعد بنجاح')
 }
+
+onMounted(() => {
+  fetchPatientAppointments()
+})
 </script>
 
 <style scoped>
+.appointments-status {
+  color: #25604a;
+  font-size: 14px;
+  font-weight: 900;
+  margin: 0 0 14px;
+  text-align: center;
+}
+
+.appointments-status.is-error {
+  color: #b42318;
+}
+
 .rating-row {
   align-items: center;
   display: flex;

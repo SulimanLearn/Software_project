@@ -1,24 +1,27 @@
 import {
   inventoryItems,
   inventoryStatusFor,
-  pharmacistOrders,
   quantityStatusFor,
   statusToPatientOrder,
   timelineStepForStatus
 } from '~/data/pharmacistPortal'
 
 export const usePharmacistPortal = () => {
-  const orders = useState('pharmacist-medication-orders', () => pharmacistOrders.map(order => ({
-    ...order,
-    medicines: order.medicines.map(medicine => ({ ...medicine }))
-  })))
+  const {
+    pharmacyOrders: orders,
+    pharmacyOrdersLoading,
+    pharmacyOrdersError,
+    fetchPharmacyOrders,
+    fetchPharmacyOrder,
+    updatePharmacyOrderStatus,
+  } = usePharmacyOrders()
 
   const inventory = useState('pharmacist-inventory', () => inventoryItems.map(item => ({ ...item })))
   const { medicationOrders } = usePatientMedicationOrders()
 
   const lowStockItems = computed(() => inventory.value.filter(item => inventoryStatusFor(item) === 'منخفض' || inventoryStatusFor(item) === 'غير متوفر'))
 
-  const updateOrderStatus = (orderNumber: string, status: string, pharmacistNotes?: string) => {
+  const updateOrderStatus = async (orderNumber: string, status: string, pharmacistNotes?: string) => {
     const order = orders.value.find(item => item.number === orderNumber)
 
     if (order) {
@@ -27,6 +30,12 @@ export const usePharmacistPortal = () => {
       if (typeof pharmacistNotes === 'string') {
         order.pharmacistNotes = pharmacistNotes
       }
+    }
+
+    try {
+      await updatePharmacyOrderStatus(order?.apiId || orderNumber.replace('ORD-', ''), status)
+    } catch {
+      // Keep the local status update when the API is unavailable.
     }
 
     const patientOrder = medicationOrders.value.find(item => item.number === orderNumber)
@@ -77,6 +86,10 @@ export const usePharmacistPortal = () => {
 
   return {
     orders,
+    ordersLoading: pharmacyOrdersLoading,
+    ordersError: pharmacyOrdersError,
+    fetchOrders: fetchPharmacyOrders,
+    fetchOrderDetails: fetchPharmacyOrder,
     inventory,
     lowStockItems,
     updateOrderStatus,

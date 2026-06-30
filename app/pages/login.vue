@@ -312,6 +312,7 @@
         background-color: inherit;
         border: 1px solid #0654CB;
         color: #000000;
+    }
     .login-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 16px 28px #0654cb3d;
