@@ -134,10 +134,10 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Search } from '@lucide/vue';
 import { doctors } from '~/data/doctors';
-import { specialties } from '~/data/specialties';
 
 const route = useRoute();
 const router = useRouter();
+const { specialties, fetchSpecialties } = useSpecialties();
 
 const searchTerm = ref('');
 const activeSpecialtySlug = ref('all');
@@ -146,10 +146,10 @@ const visibleSpecialtiesCount = ref(5);
 const specialtySlideDirection = ref<'next' | 'previous'>('next');
 
 const doctorsCount = computed(() => doctors.length);
-const specialtiesCount = computed(() => specialties.length);
-const maxSpecialtyWindowStart = computed(() => Math.max(specialties.length - visibleSpecialtiesCount.value, 0));
+const specialtiesCount = computed(() => specialties.value.length);
+const maxSpecialtyWindowStart = computed(() => Math.max(specialties.value.length - visibleSpecialtiesCount.value, 0));
 const visibleSpecialties = computed(() => (
-    specialties.slice(
+    specialties.value.slice(
         specialtyWindowStart.value,
         specialtyWindowStart.value + visibleSpecialtiesCount.value,
     )
@@ -160,7 +160,7 @@ const isAtEnd = computed(() => specialtyWindowStart.value >= maxSpecialtyWindowS
 const normalizeQueryValue = (value: unknown) => Array.isArray(value) ? value[0] : value;
 
 const isKnownSpecialty = (slug: unknown) => (
-    typeof slug === 'string' && specialties.some((specialty) => specialty.slug === slug)
+    typeof slug === 'string' && specialties.value.some((specialty) => specialty.slug === slug)
 );
 
 const clampSpecialtyWindow = () => {
@@ -168,7 +168,7 @@ const clampSpecialtyWindow = () => {
 };
 
 const placeSpecialtyNextToAll = (slug: string) => {
-    const specialtyIndex = specialties.findIndex((specialty) => specialty.slug === slug);
+    const specialtyIndex = specialties.value.findIndex((specialty) => specialty.slug === slug);
 
     if (specialtyIndex === -1) {
         return;
@@ -268,6 +268,7 @@ useHead({
 });
 
 onMounted(() => {
+    fetchSpecialties();
     updateVisibleSpecialtiesCount();
     window.addEventListener('resize', updateVisibleSpecialtiesCount, { passive: true });
 });

@@ -38,6 +38,7 @@ const loading = ref(false)
 const error = ref('')
 
 const resetEmail = useState('resetEmail', () => '')
+const resetToken = useState('resetToken', () => '')
 
 onMounted(() => {
   if (!resetEmail.value) {
@@ -76,14 +77,7 @@ const verifyCode = async () => {
   error.value = ''
 
   try {
-    // لاحقًا بدّل الرابط برابط Laravel API
-    // await $fetch('http://localhost:8000/api/verify-otp', {
-    //   method: 'POST',
-    //   body: {
-    //     email: resetEmail.value,
-    //     otp: code
-    //   }
-    // })
+    resetToken.value = code
 
     navigateTo('/reset/reset')
   } catch (err) {

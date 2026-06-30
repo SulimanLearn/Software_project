@@ -162,8 +162,9 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Eye, EyeOff, LockKeyhole, Mail, Phone, ShieldCheck, User, UserRound } from '@lucide/vue'
 
-const router = useRouter()
+const { register: registerUser, authLoading, getApiErrorMessage } = useAuth()
 
+const loading = computed(() => authLoading.value)
 const loading = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
@@ -245,36 +246,19 @@ const validate = () => {
     return valid
 }
 
-const registerUser = async (data) => {
-    return new Promise((resolve) => {
-        setTimeout(() => resolve({ success: true }), 1500)
-    })
-}
-
 const register = async () => {
     if (!validate()) return
 
-    loading.value = true
-
     try {
-        const payload = {
-            first_name: form.firstName,
-            last_name: form.lastName,
+        await registerUser({
+            name: `${form.firstName} ${form.lastName}`.trim(),
             email: form.email,
-            phone: form.phone,
             password: form.password
-        }
+        })
 
-        const res = await registerUser(payload)
-
-        if (res.success) {
-            router.push('/login')
-        }
-
+        await navigateTo('/patient')
     } catch (e) {
-        errors.general = 'حدث خطأ، حاول مرة اخرى'
-    } finally {
-        loading.value = false
+        errors.general = getApiErrorMessage(e)
     }
 }
 </script>

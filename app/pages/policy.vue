@@ -256,7 +256,6 @@
 import {
     Baby,
     CalendarDays,
-    CircleCheck,
     Cookie,
     FileText,
     Home,

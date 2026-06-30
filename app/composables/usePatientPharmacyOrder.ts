@@ -1,5 +1,4 @@
 import {
-  patientPrescriptions,
   patientProfile,
   patientRecords
 } from '~/data/patientPortal'
@@ -12,9 +11,10 @@ export const pharmacyOrderSteps = [
 ]
 
 export const usePatientPharmacyOrder = (prescriptionId: string) => {
+  const { patientPrescriptions } = usePrescriptions()
   const normalizedPrescriptionId = computed(() => decodeURIComponent(String(prescriptionId || '')))
   const prescription = computed(() =>
-    patientPrescriptions.find(item => item.number === normalizedPrescriptionId.value || String(item.id) === normalizedPrescriptionId.value)
+    patientPrescriptions.value.find(item => item.number === normalizedPrescriptionId.value || String(item.id) === normalizedPrescriptionId.value)
   )
   const relatedRecord = computed(() =>
     patientRecords.find(record => Array.isArray(record.prescriptions) && record.prescriptions.includes(prescription.value?.number || ''))

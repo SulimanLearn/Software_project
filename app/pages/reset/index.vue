@@ -39,6 +39,8 @@ const message = ref('')
 const error = ref('')
 
 const resetEmail = useState('resetEmail', () => '')
+const resetToken = useState('resetToken', () => '')
+const { forgotPassword, getApiErrorMessage } = useAuth()
 
 const sendCode = async () => {
   loading.value = true
@@ -46,13 +48,10 @@ const sendCode = async () => {
   message.value = ''
 
   try {
-    // لاحقًا بدّل الرابط برابط Laravel API
-    // await $fetch('http://localhost:8000/api/forgot-password', {
-    //   method: 'POST',
-    //   body: { email: email.value }
-    // })
+    const response = await forgotPassword(email.value)
 
     resetEmail.value = email.value
+    resetToken.value = String(response.token || '')
 
     message.value = 'تم إرسال رمز التحقق إلى بريدك الإلكتروني'
 
@@ -60,7 +59,7 @@ const sendCode = async () => {
       navigateTo('/reset/verify')
     }, 800)
   } catch (err) {
-    error.value = 'حدث خطأ أثناء إرسال الرمز'
+    error.value = getApiErrorMessage(err, 'حدث خطأ أثناء إرسال الرمز')
   } finally {
     loading.value = false
   }

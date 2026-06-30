@@ -212,14 +212,10 @@ const isNotificationMenuOpen = ref(false)
 const userMenuRef = ref(null)
 const notificationMenuRef = ref(null)
 
-const isLoggedIn = useState('isLoggedIn', () => false)
-
-const user = useState('user', () => ({
-  name: ''
-}))
+const { isLoggedIn, user, logout: logoutUser } = useAuth()
 
 const displayName = computed(() => {
-  return user.value.name || 'زائر'
+  return user.value?.name || 'زائر'
 })
 
 const route = useRoute()
@@ -300,12 +296,7 @@ const goToSpecialties = async () => {
 }
 
 const logout = async () => {
-
-  isLoggedIn.value = false
-
-  user.value = {
-    name: ''
-  }
+  await logoutUser()
   isMenuOpen.value = false
   isUserMenuOpen.value = false
   isNotificationMenuOpen.value = false
