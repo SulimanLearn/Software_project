@@ -5,6 +5,8 @@
         <h2 id="orders-title">طلبات الصيدلية</h2>
         <span>{{ medicationOrders.length }} طلبات</span>
       </div>
+      <p v-if="medicationOrdersLoading" class="orders-status">جاري تحميل الطلبات...</p>
+      <p v-else-if="medicationOrdersError" class="orders-status is-error">{{ medicationOrdersError }}</p>
 
       <div class="patient-table-wrap">
         <table class="patient-table">
@@ -71,6 +73,29 @@
 import { formatArabicDate } from '~/data/patientPortal'
 
 const selectedOrder = ref(null)
-const { medicationOrders } = usePatientMedicationOrders()
+const {
+  medicationOrders,
+  medicationOrdersLoading,
+  medicationOrdersError,
+  fetchMedicationOrders
+} = usePatientMedicationOrders()
 const steps = ['قيد المراجعة', 'يتم التحضير', 'في التوصيل', 'تم التسليم']
+
+onMounted(() => {
+  fetchMedicationOrders()
+})
 </script>
+
+<style scoped>
+.orders-status {
+  color: #25604a;
+  font-size: 14px;
+  font-weight: 900;
+  margin: 0 0 14px;
+  text-align: center;
+}
+
+.orders-status.is-error {
+  color: #b42318;
+}
+</style>

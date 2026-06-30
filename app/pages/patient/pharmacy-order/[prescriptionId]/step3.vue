@@ -169,6 +169,12 @@ const createOrderNumber = () => {
   return `ORD-${dateStamp}-${randomSegment}`
 }
 
+const resolvePrescriptionId = () => {
+  const rawId = prescription.value?.id || prescription.value?.prescriptionId || prescription.value?.number || prescriptionId.value
+  const numeric = Number(String(rawId).replace(/\D/g, ''))
+  return numeric || 0
+}
+
 const confirmOrder = async () => {
   errorMessage.value = ''
 
@@ -178,30 +184,43 @@ const confirmOrder = async () => {
   }
 
   isSubmitting.value = true
-  await wait(700)
 
-  addMedicationOrder({
-    id: Date.now(),
-    number: orderState.value?.orderNumber || createOrderNumber(),
-    prescriptionNumber: prescription.value.number,
-    date: new Date().toISOString().slice(0, 10),
-    medications: orderState.value.medications.map(item => item.name).join('، '),
-    status: 'قيد المراجعة',
-    address: orderState.value.deliveryAddress,
-    timelineStep: 1,
-    patientName: patientInfo.value.name,
-    doctorName: prescription.value.doctorName,
-    specialty: specialty.value,
-    diagnosis: orderState.value.diagnosis,
-    paymentMethod: orderState.value.paymentMethod,
-    preferredTime: orderState.value.preferredTime,
-    notes: orderState.value.notes,
-    medicationsList: orderState.value.medications
-  })
+  try {
+    const apiPrescriptionId = resolvePrescriptionId()
 
-  showSuccessToast.value = true
-  await wait(800)
-  await navigateTo('/patient/orders')
+    if (!apiPrescriptionId) {
+      throw new Error('تعذر تحديد رقم الوصفة لإرسال الطلب.')
+    }
+
+    await addMedicationOrder({
+      prescriptionId: apiPrescriptionId,
+      deliveryAddress: orderState.value.deliveryAddress,
+      notes: orderState.value.notes,
+      id: Date.now(),
+      number: orderState.value?.orderNumber || createOrderNumber(),
+      prescriptionNumber: prescription.value.number,
+      date: new Date().toISOString().slice(0, 10),
+      medications: orderState.value.medications.map(item => item.name).join('، '),
+      status: 'قيد المراجعة',
+      address: orderState.value.deliveryAddress,
+      timelineStep: 1,
+      patientName: patientInfo.value.name,
+      doctorName: prescription.value.doctorName,
+      specialty: specialty.value,
+      diagnosis: orderState.value.diagnosis,
+      paymentMethod: orderState.value.paymentMethod,
+      preferredTime: orderState.value.preferredTime,
+      medicationsList: orderState.value.medications
+    })
+
+    showSuccessToast.value = true
+    await wait(800)
+    await navigateTo('/patient/orders')
+  } catch (error) {
+    errorMessage.value = error?.data?.message || error?.message || 'تعذر إرسال طلب الدواء، حاول مرة أخرى.'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 

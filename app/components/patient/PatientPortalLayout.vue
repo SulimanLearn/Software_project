@@ -2,7 +2,7 @@
   <div class="patient-portal-page" dir="rtl">
     <NavBar />
     <div class="patient-portal-shell">
-      <SideBarPatient :patient="patient" @logout="showLogoutModal = true" />
+      <SideBarPatient :patient="currentPatient" @logout="showLogoutModal = true" />
 
       <main class="patient-portal-content">
         <header class="patient-page-header">
@@ -41,7 +41,7 @@
 <script setup>
 import { patientProfile } from '~/data/patientPortal'
 
-defineProps({
+const props = defineProps({
   title: {
     type: String,
     required: true
@@ -61,7 +61,27 @@ defineProps({
 })
 
 const showLogoutModal = ref(false)
-const { logout } = useAuth()
+const { logout, user } = useAuth()
+const { patientProfile: apiPatientProfile, fetchPatientProfile } = usePatients()
+
+const currentPatient = computed(() => {
+  const authName = user.value?.name || user.value?.full_name || ''
+  const isLocalDemoProfile = apiPatientProfile.value.name === patientProfile.name
+
+  return {
+    ...props.patient,
+    ...apiPatientProfile.value,
+    name: isLocalDemoProfile ? authName || apiPatientProfile.value.name : apiPatientProfile.value.name || authName || props.patient.name,
+    email: apiPatientProfile.value.email || user.value?.email || props.patient.email,
+    phone: apiPatientProfile.value.phone || user.value?.phone || props.patient.phone,
+    role: apiPatientProfile.value.role || props.patient.role || 'مريض',
+    avatar: apiPatientProfile.value.avatar || props.patient.avatar,
+  }
+})
+
+onMounted(() => {
+  fetchPatientProfile()
+})
 
 const confirmLogout = async () => {
   await logout()

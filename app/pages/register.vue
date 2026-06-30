@@ -164,8 +164,9 @@ import { Eye, EyeOff, LockKeyhole, Mail, Phone, ShieldCheck, User, UserRound } f
 
 const { register: registerUser, authLoading, getApiErrorMessage } = useAuth()
 
-const loading = computed(() => authLoading.value)
-const loading = ref(false)
+const apiLoading = computed(() => authLoading.value)
+const uiLoading = ref(false)
+const loading = computed(() => apiLoading.value || uiLoading.value)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
@@ -249,6 +250,8 @@ const validate = () => {
 const register = async () => {
     if (!validate()) return
 
+    uiLoading.value = true
+
     try {
         await registerUser({
             name: `${form.firstName} ${form.lastName}`.trim(),
@@ -259,6 +262,8 @@ const register = async () => {
         await navigateTo('/patient')
     } catch (e) {
         errors.general = getApiErrorMessage(e)
+    } finally {
+        uiLoading.value = false
     }
 }
 </script>

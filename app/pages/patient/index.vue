@@ -2,7 +2,7 @@
   <PatientPortalLayout
     title="نظرة عامة"
     :eyebrow="currentArabicDate"
-    :subtitle="`مرحباً بعودتك، ${patientProfile.name}. هذا ملخص نشاطك الصحي.`"
+    :subtitle="`مرحباً بعودتك، ${displayPatientName}. هذا ملخص نشاطك الصحي.`"
   >
     <template #header-action>
       <PatientActionButton :to="appointmentBookingRoute" variant="primary">
@@ -26,6 +26,8 @@
           <h2 id="upcoming-appointments-title">المواعيد القادمة</h2>
           <span>{{ upcomingAppointments.length }} مواعيد</span>
         </div>
+        <p v-if="patientAppointmentsLoading" class="patient-api-status">جاري تحميل المواعيد...</p>
+        <p v-else-if="patientAppointmentsError" class="patient-api-status is-error">{{ patientAppointmentsError }}</p>
 
         <div class="patient-table-wrap">
           <table class="patient-table">
@@ -142,7 +144,6 @@
 <script setup>
 import {
   formatArabicDate,
-  patientAppointments,
   patientOrders,
   patientPrescriptions,
   patientProfile,
@@ -150,12 +151,29 @@ import {
 } from '~/data/patientPortal'
 
 const selectedAppointment = ref(null)
+const {
+  patientProfile: apiPatientProfile,
+  patientAppointments,
+  patientAppointmentsLoading,
+  patientAppointmentsError,
+  fetchPatientAppointments,
+  fetchPatientProfile
+} = usePatients()
 const { appointmentBookingRoute } = usePatientAppointmentBooking()
 const { latestNotifications } = usePatientNotifications()
-const upcomingAppointments = computed(() => patientAppointments.filter((appointment) => appointment.category === 'upcoming'))
+const { user } = useAuth()
+const upcomingAppointments = computed(() => patientAppointments.value.filter((appointment) => appointment.category === 'upcoming'))
 const currentArabicDate = ref('')
+const displayPatientName = computed(() => {
+  const authName = user.value?.name || user.value?.full_name || ''
+  return apiPatientProfile.value.name === patientProfile.name
+    ? authName || apiPatientProfile.value.name
+    : apiPatientProfile.value.name || authName || patientProfile.name
+})
 
 onMounted(() => {
+  fetchPatientProfile()
+  fetchPatientAppointments()
   currentArabicDate.value = new Intl.DateTimeFormat('ar-u-nu-latn', {
     weekday: 'long',
     day: 'numeric',
@@ -183,6 +201,18 @@ onMounted(() => {
 
 .patient-overview-bottom > .patient-dashboard-card {
   min-width: 0;
+}
+
+.patient-api-status {
+  color: #25604a;
+  font-size: 14px;
+  font-weight: 900;
+  margin: 0;
+  text-align: center;
+}
+
+.patient-api-status.is-error {
+  color: #b42318;
 }
 
 @media (max-width: 720px) {

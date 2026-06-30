@@ -18,6 +18,8 @@
         <h2 id="orders-title">كل طلبات الأدوية</h2>
         <span>{{ filteredOrders.length }} طلب</span>
       </div>
+      <p v-if="ordersLoading" class="pharmacist-api-status">جاري تحميل الطلبات...</p>
+      <p v-else-if="ordersError" class="pharmacist-api-status is-error">{{ ordersError }}</p>
 
       <PharmacistDataTable>
         <thead>
@@ -43,7 +45,7 @@
             <td data-label="الحالة"><PharmacistStatusBadge :status="order.status" /></td>
             <td data-label="الإجراءات">
               <div class="pharmacist-action-row">
-                <PharmacistActionButton variant="soft" @click="selectedOrder = order">
+                <PharmacistActionButton variant="soft" @click="selectOrder(order)">
                   عرض
                 </PharmacistActionButton>
               </div>
@@ -80,7 +82,14 @@ const statusFilter = ref('')
 const dateFilter = ref('')
 const selectedOrder = ref<any>(null)
 const toastMessage = ref('')
-const { orders, updateOrderStatus } = usePharmacistPortal()
+const {
+  orders,
+  ordersLoading,
+  ordersError,
+  fetchOrders,
+  fetchOrderDetails,
+  updateOrderStatus
+} = usePharmacistPortal()
 
 const statusOptions = [
   { label: 'كل الحالات', value: '' },
@@ -109,9 +118,39 @@ const showToast = (message: string) => {
   }, 2400)
 }
 
-const saveOrderChanges = (payload: { orderNumber: string, status: string, pharmacistNotes: string }) => {
-  updateOrderStatus(payload.orderNumber, payload.status, payload.pharmacistNotes)
+const selectOrder = async (order: any) => {
+  selectedOrder.value = order
+
+  if (order.apiId) {
+    try {
+      selectedOrder.value = await fetchOrderDetails(order.apiId)
+    } catch {
+      showToast('تعذر تحميل تفاصيل الطلب من الخادم، تم عرض البيانات المتاحة.')
+    }
+  }
+}
+
+const saveOrderChanges = async (payload: { orderNumber: string, status: string, pharmacistNotes: string }) => {
+  await updateOrderStatus(payload.orderNumber, payload.status, payload.pharmacistNotes)
   selectedOrder.value = null
   showToast('تم حفظ تغييرات الطلب وربطها بحالة طلب المريض')
 }
+
+onMounted(() => {
+  fetchOrders()
+})
 </script>
+
+<style scoped>
+.pharmacist-api-status {
+  color: #25604a;
+  font-size: 14px;
+  font-weight: 900;
+  margin: 0 0 14px;
+  text-align: center;
+}
+
+.pharmacist-api-status.is-error {
+  color: #b42318;
+}
+</style>

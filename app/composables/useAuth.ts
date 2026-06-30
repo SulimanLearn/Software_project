@@ -1,6 +1,7 @@
 type AuthUser = {
   id?: number
   name?: string
+  full_name?: string
   email?: string
   phone?: string
   [key: string]: unknown
@@ -41,9 +42,14 @@ export const useAuth = () => {
     return String(baseUrl).replace(/\/$/, '')
   })
 
+  const normalizeUser = (profile: AuthUser) => ({
+    ...profile,
+    name: profile.name || profile.full_name || '',
+  })
+
   const setSession = (payload: AuthResponse) => {
     token.value = payload.token
-    user.value = payload.user
+    user.value = normalizeUser(payload.user)
     isLoggedIn.value = true
   }
 
@@ -107,7 +113,7 @@ export const useAuth = () => {
 
     try {
       const profile = await authFetch<AuthUser>('/me')
-      user.value = profile
+      user.value = normalizeUser(profile)
       isLoggedIn.value = true
       return profile
     } catch (error) {

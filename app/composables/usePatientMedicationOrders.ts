@@ -1,18 +1,30 @@
-import { patientOrders } from '~/data/patientPortal'
-
 export const usePatientMedicationOrders = () => {
-  const medicationOrders = useState('patient-medication-orders', () => patientOrders.map(order => ({ ...order })))
+  const {
+    patientMedicationOrders,
+    pharmacyOrdersLoading,
+    pharmacyOrdersError,
+    fetchPharmacyOrders,
+    createPharmacyOrder,
+  } = usePharmacyOrders()
+  const medicationOrders = patientMedicationOrders
 
-  const addMedicationOrder = (order: Record<string, any>) => {
-    const exists = medicationOrders.value.some(item => item.number === order.number)
-
-    if (!exists) {
-      medicationOrders.value = [order, ...medicationOrders.value]
+  const addMedicationOrder = async (order: Record<string, any>) => {
+    if (order.prescriptionId || order.prescription_id) {
+      return createPharmacyOrder({
+        prescription_id: Number(order.prescriptionId || order.prescription_id),
+        delivery_address: order.address || order.deliveryAddress || '',
+        notes: order.notes || '',
+      })
     }
+
+    return order
   }
 
   return {
     medicationOrders,
+    medicationOrdersLoading: pharmacyOrdersLoading,
+    medicationOrdersError: pharmacyOrdersError,
+    fetchMedicationOrders: fetchPharmacyOrders,
     addMedicationOrder
   }
 }
